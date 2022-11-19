@@ -44,7 +44,7 @@ def cost(x,y,W,b):
     return(costval)
 
 
-def selectXY(x,y):
+def randomXY(x,y):
     n = x.shape[0]
     k = np.random.randint(10)
     x0 = np.array([[x[k,0]],
@@ -52,7 +52,14 @@ def selectXY(x,y):
     y0 = np.array([[y[k,0]],
                    [y[k,1]]])
     return(x0,y0)
-                
+
+def selectXY(x,y,k):
+    n = x.shape[0]
+    x0 = np.array([[x[k,0]],
+                   [x[k,1]]])
+    y0 = np.array([[y[k,0]],
+                   [y[k,1]]])
+    return(x0,y0)
 
 def forwardPass(x,W,b):
     a = []
@@ -89,26 +96,27 @@ def updateGradient(x,eta,a,W,b):
 
 
 eta = 0.05 #learning rate
-itr = 10**3 #number of iterations
+itr = 10**5 #number of iterations
 savecost = np.zeros(itr) #monitor cost function
 
 
 for i in range(itr):
-    x0, y0 = selectXY(xt,yt)
-    a = forwardPass(x0,W,b)
-    delta = backwardPass(y0,a,W)
-    W, b = updateGradient(x0,eta,a,W,b)
+    for k in range(xt.shape[0]):
+        x0, y0 = selectXY(xt,yt,k)
+        a = forwardPass(x0,W,b)
+        delta = backwardPass(y0,a,W)
+        W, b = updateGradient(x0,eta,a,W,b)
     newcost = cost(xt,yt,W,b)
     savecost[i] = newcost
 
-"""
+
 plt.plot(np.array(range(itr)),np.log10(savecost))
 plt.title("Convergence of Cost Function")
 plt.xlabel("Iteration")
 plt.ylabel("Log Cost")
 plt.show()
-"""
 
+"""
 xh = np.arange(0,1,0.01)
 xv = np.arange(0,1,0.01)
 xall = np.array(list(product(xh, xv)))
@@ -123,6 +131,6 @@ for i in range(xall.shape[0]):
 
 ySave = np.around(ySave,0)
 yc = ySave[:,0]
-plt.scatter(xall[:,0]*(1-yc),xall[:,1]*(1-yc),c="orange")
-plt.scatter(xall[:,0]*yc,xall[:,1]*yc,c="purple")
+plt.scatter(xall[:,0]*yc,xall[:,1]*yc)
 plt.show()
+"""
