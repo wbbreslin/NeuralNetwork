@@ -29,7 +29,7 @@ def const_stepsize(x_k, f_k, p_k, alpha, **kwargs):
     return alpha, x_k, f_k
 
 
-def backtrack_stepsize(x_k, f_k, p_k, f, df, alpha, rho, c, **kwargs):
+def backtrack_stepsize(x_k, f_k, p_k, f, f_args, df, df_args, alpha, rho, c, **kwargs):
     """ Backtracking step size function - for a given iterate x_k
         and direction p_k, it finds and returns a step size such
         that the first Wolfe condition W1 is satisfied. It also
@@ -38,15 +38,19 @@ def backtrack_stepsize(x_k, f_k, p_k, f, df, alpha, rho, c, **kwargs):
         searching for the next step size.
 
         Inputs
-        x_k   : Current iterate
-        f_k   : Cost function value at current iterate
-        p_k   : Search direction
-        f     : Cost function, returns f(x) (function)
-        df    : Gradient of cost function, returns df(x) (function)
-        alpha : Initial step size
-        rho   : Backtracking factor for scaling alpha if the
-                Wolfe condition W1 is not satisfied
-        c     : Constant for the first Wolfe condition W1
+        x_k     : Current iterate
+        f_k     : Cost function value at current iterate
+        p_k     : Search direction
+        f       : Cost function, returns f(x) (function)
+        f_args  : Tuple of args for the cost function; cost function is
+                  called by f(x, *f_args)
+        df      : Gradient of cost function, returns df(x) (function)
+        df_args : Tuple of args for the gradient function; gradient function
+                  is called by df(x, *df_args)
+        alpha   : Initial step size
+        rho     : Backtracking factor for scaling alpha if the
+                  Wolfe condition W1 is not satisfied
+        c       : Constant for the first Wolfe condition W1
 
         kwargs : Optional keyword args:
                  df_k  : Holds df_k if it is already known
@@ -61,16 +65,16 @@ def backtrack_stepsize(x_k, f_k, p_k, f, df, alpha, rho, c, **kwargs):
     if 'df_k' in kwargs.keys():
         df_k = kwargs['df_k']
     else:
-        df_k = df(x_k)
+        df_k = df(x_k, *df_args)
 
     # scale step size by rho until first Wolfe condition W1 is satisfied
     x_k1 = x_k + alpha * p_k
-    f_k1 = f(x_k1)
+    f_k1 = f(x_k1, *f_args)
     c_p_df = c * p_k @ df_k
     while f_k1 > (f_k + alpha * c_p_df):
         alpha = rho * alpha
         x_k1 = x_k + alpha * p_k
-        f_k1 = f(x_k1)
+        f_k1 = f(x_k1, *f_args)
 
     # return step size, next iterate x_{k+1}, f(x_{k+1})
     return alpha, x_k1, f_k1
@@ -82,12 +86,15 @@ def backtrack_stepsize(x_k, f_k, p_k, f, df, alpha, rho, c, **kwargs):
 ### additional required arguments - optional
 ### keyword argument, containing 'df_k' == df(x_k) if it is already known
 
-def steepest_dir(x_k, df, **kwargs):
+def steepest_dir(x_k, df, df_args, **kwargs):
     """ Function for calculating the steepest descent search direction
 
         Inputs
-        df    : Gradient of cost function, returns df(x) (function)
-        x_k : Point at which to calculate the gradient
+        x_k     : Point at which to calculate the gradient
+        df      : Gradient of cost function, returns df(x) (function)
+        df_args : Tuple of args for the gradient function; gradient function
+                  is called by df(x, *df_args)
+
 
         kwargs : Optional keyword args:
                  df_k  : Holds df_k if it is already known
@@ -98,16 +105,22 @@ def steepest_dir(x_k, df, **kwargs):
     # return steepest descent direction at x_k
     if 'df_k' in kwargs.keys():
         return -kwargs['df_k']
-    return -df(x_k)
+    return -df(x_k, *df_args)
 
 
-def newton_dir(x_k, f, df, d2f, **kwargs):
+def newton_dir(x_k, f, f_args, df, df_args, d2f, d2f_args, **kwargs):
     """ Function for calculating the Newton's method search direction
 
         Inputs
-        f     : Cost function, returns f(x) (function)
-        df    : Gradient of cost function, returns df(x) (function)
-        d2f   : Hessian of cost function, returns d2f(x) (function)
+        f        : Cost function, returns f(x) (function)
+        f_args   : Tuple of args for the cost function; cost function is
+                   called by f(x, *f_args)
+        df       : Gradient of cost function, returns df(x) (function)
+        df_args  : Tuple of args for the gradient function; gradient function
+                   is called by df(x, *df_args)
+        d2f      : Hessian of cost function, returns d2f(x) (function)
+        d2f_args : Tuple of args for the Hessian function; Hessian function
+                   is called by d2f(x, *d2f_args)
         x_k : Point at which to calculate the gradient and Hessian
 
         kwargs : Optional keyword args:
@@ -121,13 +134,13 @@ def newton_dir(x_k, f, df, d2f, **kwargs):
     if 'df_k' in kwargs.keys():
         df_k = kwargs['df_k']
     else:
-        df_k = df(x_k)
-    return -np.linalg.solve(d2f(x_k), df_k)
+        df_k = df(x_k, *f_args)
+    return -np.linalg.solve(d2f(x_k, *d2f_args), df_k)
 
 
 ### general gradient descent algorithm
 
-def graditer(x_k, f, df, stepdir, stepdir_args, stepsize, stepsize_args, \
+def graditer(x_k, f, f_args, df, df_args, stepdir, stepdir_args, stepsize, stepsize_args, \
         eps=1.0e-5, maxiter=1.0e+6):
     """ graditer(): Iterative line search optimization algorithm
 
@@ -139,7 +152,11 @@ def graditer(x_k, f, df, stepdir, stepdir_args, stepsize, stepsize_args, \
         Inputs
         x_k           : Starting point
         f             : Cost function, returns f(x) (function)
+        f_args        : Tuple of args for the cost function; cost function is
+                        called by f(x, *f_args)
         df            : Gradient of cost function, returns df(x) (function)
+        df_args       : Tuple of args for the gradient function; gradient
+                        function is called by df(x, *df_args)
         stepdir       : Function for computing a step direction at the current
                         iterate x_k (function)
         stepdir_args  : Arguments required for step direction function (tuple)
@@ -160,9 +177,9 @@ def graditer(x_k, f, df, stepdir, stepdir_args, stepsize, stepsize_args, \
     # and store initial iterate, f_k, and |df_k| vals
     niter = 0
     iters = np.array([x_k])
-    f_k = f(x_k)
+    f_k = f(x_k, *f_args)
     f_vals = np.array([f_k])
-    df_k = df(x_k)
+    df_k = df(x_k, *df_args)
     norm_df_k = np.linalg.norm(df_k)
     norm_df_vals = np.array([norm_df_k])
 
@@ -181,8 +198,8 @@ def graditer(x_k, f, df, stepdir, stepdir_args, stepsize, stepsize_args, \
         if _f_k1 != f_k:
             f_k = _f_k1
         else:
-            f_k = f(x_k)
-        df_k = df(x_k)
+            f_k = f(x_k, *f_args)
+        df_k = df(x_k, *df_args)
         norm_df_k = np.linalg.norm(df_k)
         iters = np.append(iters, [x_k], axis=0)
         f_vals = np.append(f_vals, f_k)
