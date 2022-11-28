@@ -152,6 +152,8 @@ rnd = np.random.default_rng(seed=1123).standard_normal
 dims = (2, 2, 3, 2)
 layers = len(dims)
 
+print('\nlayer dimensions:', dims)
+
 # initialize Ws and bs
 W, b = W_b_init(dims)
 
@@ -220,3 +222,52 @@ perf(data_x, train_y, W, b)
 # print('|df(x^*)| = %f' % n_b_df[-1])
 # W, b = W_b_vec_to_list(n_b_x_iters[-1], dims)
 # perf(data_x, train_y, W, b)
+
+### add additional layers
+
+dims = (2, 5, 4, 3, 4, 2)
+layers = len(dims)
+
+print('\nlayer dimensions:', dims)
+# initialize Ws and bs
+W, b = W_b_init(dims)
+
+# initialize x0 as Ws and bs as a column (W1[:], ..., Wl[:], b1[:], ... bl[:])
+x0 = W_b_list_to_vec(W, b)
+
+# arguments required for F and dF
+F_args = (dims, data_x, train_y, W_b_vec_to_list, model)
+dF_args = (dims, data_x, train_y, W_b_vec_to_list, W_b_list_to_vec)
+
+# arguments for direction functions
+steepest_args = (dF, dF_args)
+
+# arguments for constant step size function # no changes to these
+# stepsize = 0.5
+# const_args = (stepsize, )
+
+# arguments for backtrack step size function
+# alpha = 1.; rho = 0.5; c = 0.01  # no changes to these
+backtrack_args = (F, F_args, dF, dF_args, alpha, rho, c) # backtrack step size
+
+# perform gradient descent using constant step size
+c_x_iters, c_f, c_df = graditer(x0, F, F_args, dF, dF_args, \
+                                steepest_dir, steepest_args, \
+                                const_stepsize, const_args, \
+                                eps=1.0e-4)
+print('\nconstant step size iterations: %d' % len(c_x_iters))
+print('f(x^*) = %f' % c_f[-1])
+print('|df(x^*)| = %f' % c_df[-1])
+W, b = W_b_vec_to_list(c_x_iters[-1], dims)
+perf(data_x, train_y, W, b)
+
+# perform gradient descent using backtrack step size
+b_x_iters, b_f, b_df = graditer(x0, F, F_args, dF, dF_args, \
+                                steepest_dir, steepest_args, \
+                                backtrack_stepsize, backtrack_args, \
+                                eps=1.0e-4)
+print('\nbacktrack iterations: %d' % len(b_x_iters))
+print('f(x^*) = %f' % b_f[-1])
+print('|df(x^*)| = %f' % b_df[-1])
+W, b = W_b_vec_to_list(b_x_iters[-1], dims)
+perf(data_x, train_y, W, b)
