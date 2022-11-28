@@ -1,4 +1,5 @@
 import numpy as np
+import numdifftools as nd
 #import matplotlib
 #matplotlib.rcParams['text.usetex'] = True
 #matplotlib.rcParams['font.size']=14
@@ -123,6 +124,10 @@ def dF(x, dims, data_x, train_y, W_b_vec_to_list, W_b_list_to_vec):
                 dF_db[l] += _dF_db[l]
     return W_b_list_to_vec(dF_dW, dF_db)
 
+def d2F(x, dims, data_x, train_y, W_b_vec_to_list, model):
+    hess = nd.Hessian(F)(x, dims, data_x, train_y, W_b_vec_to_list, model)
+    return hess
+
 def W_b_init(dims):
     """ initialize lists of weights and biases, 0 for input layer """
     W = [0]; b = [0];
@@ -156,9 +161,13 @@ x0 = W_b_list_to_vec(W, b)
 # arguments required for F and dF
 F_args = (dims, data_x, train_y, W_b_vec_to_list, model)
 dF_args = (dims, data_x, train_y, W_b_vec_to_list, W_b_list_to_vec)
+d2F_args = F_args
 
-# arguments for direction functions
+# arguments for steepest descent direction
 steepest_args = (dF, dF_args)
+
+# arguments for Newton direction
+newton_args = (F, F_args, dF, dF_args, d2F, d2F_args)
 
 # arguments for constant step size function
 stepsize = 0.5
@@ -172,7 +181,7 @@ backtrack_args = (F, F_args, dF, dF_args, alpha, rho, c) # backtrack step size
 c_x_iters, c_f, c_df = graditer(x0, F, F_args, dF, dF_args, \
                                 steepest_dir, steepest_args, \
                                 const_stepsize, const_args, \
-                                eps=1.0e-3)
+                                eps=1.0e-4)
 print('\nconstant step size iterations: %d' % len(c_x_iters))
 print('f(x^*) = %f' % c_f[-1])
 print('|df(x^*)| = %f' % c_df[-1])
@@ -183,9 +192,31 @@ perf(data_x, train_y, W, b)
 b_x_iters, b_f, b_df = graditer(x0, F, F_args, dF, dF_args, \
                                 steepest_dir, steepest_args, \
                                 backtrack_stepsize, backtrack_args, \
-                                eps=1.0e-3)
+                                eps=1.0e-4)
 print('\nbacktrack iterations: %d' % len(b_x_iters))
 print('f(x^*) = %f' % b_f[-1])
 print('|df(x^*)| = %f' % b_df[-1])
 W, b = W_b_vec_to_list(b_x_iters[-1], dims)
 perf(data_x, train_y, W, b)
+
+# # perform Newton iteration using constant step size
+# n_c_x_iters, n_c_f, n_c_df = graditer(x0, F, F_args, dF, dF_args, \
+#                                       newton_dir, newton_args, \
+#                                       const_stepsize, const_args, \
+#                                       eps=1.0e-3)
+# print('\nNewton constant step size iterations: %d' % len(n_c_x_iters))
+# print('f(x^*) = %f' % n_c_f[-1])
+# print('|df(x^*)| = %f' % n_c_df[-1])
+# W, b = W_b_vec_to_list(n_c_x_iters[-1], dims)
+# perf(data_x, train_y, W, b)
+
+# # perform Newton iteration using backtrack step size
+# n_b_x_iters, n_b_f, n_b_df = graditer(x0, F, F_args, dF, dF_args, \
+#                                       newton_dir, newton_args, \
+#                                       backtrack_stepsize, backtrack_args, \
+#                                       eps=1.0e-3)
+# print('\nNewton constant step size iterations: %d' % len(n_b_x_iters))
+# print('f(x^*) = %f' % n_b_f[-1])
+# print('|df(x^*)| = %f' % n_b_df[-1])
+# W, b = W_b_vec_to_list(n_b_x_iters[-1], dims)
+# perf(data_x, train_y, W, b)
