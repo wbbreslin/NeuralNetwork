@@ -135,7 +135,11 @@ def newton_dir(x_k, f, f_args, df, df_args, d2f, d2f_args, **kwargs):
         df_k = kwargs['df_k']
     else:
         df_k = df(x_k, *f_args)
-    return -np.linalg.solve(d2f(x_k, *d2f_args), df_k)
+    hess = d2f(x_k, *d2f_args)
+    # use lstsq instead of solve in case Hessian is singular
+    x, resid, ran, s = np.linalg.lstsq(hess, df_k, rcond=None)
+    return -x
+    #return -np.linalg.solve(d2f(x_k, *d2f_args), df_k)
 
 
 ### general gradient descent algorithm
