@@ -229,6 +229,7 @@ dims = (2, 5, 4, 3, 4, 2)
 layers = len(dims)
 
 print('\nlayer dimensions:', dims)
+
 # initialize Ws and bs
 W, b = W_b_init(dims)
 
