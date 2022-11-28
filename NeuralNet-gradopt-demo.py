@@ -123,6 +123,15 @@ def dF(x, dims, data_x, train_y, W_b_vec_to_list, W_b_list_to_vec):
                 dF_db[l] += _dF_db[l]
     return W_b_list_to_vec(dF_dW, dF_db)
 
+def W_b_init(dims):
+    """ initialize lists of weights and biases, 0 for input layer """
+    W = [0]; b = [0];
+    layers = len(dims)
+    for l in range(1, layers):
+        W.append(0.5*rnd((dims[l], dims[l-1])))
+        b.append(0.5*rnd(dims[l]))
+    return W, b
+
 # initialize input data
 x1 = np.array([0.1, 0.3, 0.1, 0.6, 0.4, 0.6, 0.5, 0.9, 0.4, 0.7])
 x2 = np.array([0.1, 0.4, 0.5, 0.9, 0.2, 0.3, 0.6, 0.2, 0.4, 0.6])
@@ -138,11 +147,8 @@ rnd = np.random.default_rng(seed=1123).standard_normal
 dims = (2, 2, 3, 2)
 layers = len(dims)
 
-# initialize Ws and bs (lists of weights and biases, 0 for input layer)
-W = [0]; b = [0]
-for l in range(1, layers):
-    W.append(0.5*rnd((dims[l], dims[l-1])))
-    b.append(0.5*rnd(dims[l]))
+# initialize Ws and bs
+W, b = W_b_init(dims)
 
 # initialize x0 as Ws and bs as a column (W1[:], ..., Wl[:], b1[:], ... bl[:])
 x0 = W_b_list_to_vec(W, b)
