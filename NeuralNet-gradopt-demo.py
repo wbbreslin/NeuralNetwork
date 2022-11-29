@@ -9,6 +9,28 @@ from scipy.special import expit
 
 from gradopt import *
 
+from itertools import product
+
+def resplot(W, b):
+    xh = np.arange(0,1,0.01)
+    xv = np.arange(0,1,0.01)
+    xall = np.array(list(product(xh, xv)))
+    ySave = xall*0
+
+    for i in range(xall.shape[0]):
+        xp = np.array([xall[i,0], xall[i,1]])
+        a = model(xp,W,b)
+        ySave[i,0]=a[0]
+        ySave[i,1]=a[1]
+
+    ySave = np.around(ySave,0)
+    yc = ySave[:,0]
+    plt.scatter(xall[:,0]*yc,xall[:,1]*yc, color='gray')
+    plt.scatter(x1[:5], x2[:5], marker='o', color='b')
+    plt.scatter(x1[5:], x2[5:], marker='o', color='r')
+    plt.show()
+    plt.clf()
+
 def model(x, W, b):
     """ returns classification for the data point x """
     _x = x
@@ -160,6 +182,10 @@ W, b = W_b_init(dims)
 # initialize x0 as Ws and bs as a column (W1[:], ..., Wl[:], b1[:], ... bl[:])
 x0 = W_b_list_to_vec(W, b)
 
+# initialize lists for plotting
+plot_vecs = []
+plot_labels = []
+
 # arguments required for F and dF
 F_args = (dims, data_x, train_y, W_b_vec_to_list, model)
 dF_args = (dims, data_x, train_y, W_b_vec_to_list, W_b_list_to_vec)
@@ -189,6 +215,8 @@ print('f(x^*) = %f' % c_f[-1])
 print('|df(x^*)| = %f' % c_df[-1])
 W, b = W_b_vec_to_list(c_x_iters[-1], dims)
 perf(data_x, train_y, W, b)
+plot_vecs.append(c_f); plot_labels.append('constant 1')
+resplot(W, b)
 
 # perform gradient descent using backtrack step size
 b_x_iters, b_f, b_df = graditer(x0, F, F_args, dF, dF_args, \
@@ -200,6 +228,8 @@ print('f(x^*) = %f' % b_f[-1])
 print('|df(x^*)| = %f' % b_df[-1])
 W, b = W_b_vec_to_list(b_x_iters[-1], dims)
 perf(data_x, train_y, W, b)
+plot_vecs.append(b_f); plot_labels.append('backtrack 1')
+resplot(W, b)
 
 # # perform Newton iteration using constant step size
 # n_c_x_iters, n_c_f, n_c_df = graditer(x0, F, F_args, dF, dF_args, \
@@ -261,6 +291,8 @@ print('f(x^*) = %f' % c_f[-1])
 print('|df(x^*)| = %f' % c_df[-1])
 W, b = W_b_vec_to_list(c_x_iters[-1], dims)
 perf(data_x, train_y, W, b)
+plot_vecs.append(c_f); plot_labels.append('constant 2')
+resplot(W, b)
 
 # perform gradient descent using backtrack step size
 b_x_iters, b_f, b_df = graditer(x0, F, F_args, dF, dF_args, \
@@ -272,3 +304,14 @@ print('f(x^*) = %f' % b_f[-1])
 print('|df(x^*)| = %f' % b_df[-1])
 W, b = W_b_vec_to_list(b_x_iters[-1], dims)
 perf(data_x, train_y, W, b)
+plot_vecs.append(b_f); plot_labels.append('backtrack 2')
+resplot(W, b)
+
+def perfplot(vec, vec_label):
+    plt.plot(vec, label=vec_label)
+    plt.legend()
+    plt.show()
+
+for i in [0, 2, 1, 3]:
+    perfplot(plot_vecs[i], plot_labels[i])
+    plt.clf()
