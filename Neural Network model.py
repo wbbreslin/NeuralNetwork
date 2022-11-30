@@ -17,6 +17,29 @@ def activate(x,W,b):
     a = 1/(1+np.exp(-z))
     return(a)
 
+def backtracking_NN_Model(x,y,neurons,itr):
+    """Neural Network model using gradient descent method"""
+    W,b = createNetwork(neurons)
+    N = x.shape[0]
+    cost = np.zeros(itr)
+    for i in range(itr):
+        dW = resetParameters(W)
+        db = resetParameters(b)
+        for k in range(N):
+            x0, y0 = selectXY(x,y,k)
+            a = forwardPass(x0,W,b)
+            delta = backwardPass(y0,a,W)
+            dW0, db0 = stochasticGradient(x0,a,delta)
+            for j in range(len(W)):
+                dW[j] += dW0[j]
+                db[j] += db0[j]
+        eta = backtrackingLineSearch(x,y,W,b,dW,db,alpha=1,rho=0.5,c=0.01)
+        W = updateParameters(W,dW,eta)
+        b = updateParameters(b,db,eta)
+        newcost = costFunction(x,y,W,b)
+        cost[i] = newcost
+    return(W,b,cost)
+
 def backwardPass(y,a,W):
     """Backward pass through the network to calculate deltas"""
     layers = len(W)
@@ -32,6 +55,7 @@ def backwardPass(y,a,W):
     delta.reverse()
     return(delta)
 
+
 def costFunction(x,y,W,b):
     """The cost function to be minimized"""
     n = x.shape[0]
@@ -45,10 +69,6 @@ def costFunction(x,y,W,b):
         costvec[i] = np.linalg.norm(y0-a[-1])**2
     cost = sum(costvec)/10
     return(cost)
-
-def costGradient(x,y,W,b):
-    par = [W,b]
-    par, dims = toVector(par)
     
 def createNetwork(neurons):
     """Initiates Network parameters given a list of neurons per layer"""
@@ -57,6 +77,31 @@ def createNetwork(neurons):
         W.append(0.5*np.random.rand(neurons[i+1],neurons[i]))
         b.append(0.5*np.random.rand(neurons[i+1],1))
     return(W,b)
+
+def backtrackingLineSearch(x,y,W,b,dW,db,alpha,rho,c):
+    # Concatenate Lists
+    theta0 = W+b
+    gradient = dW+db
+    # Convert to Vectors
+    theta0_vec, dim_theta = toVector(theta0)
+    gradient_vec, dim_gradient = toVector(gradient)
+    # Define terms, calculate cost functions
+    cost_old = costFunction(x,y,W,b)
+    theta1_vec = theta0_vec - alpha*gradient_vec
+    theta1 = toMatrix(theta1_vec,dim_theta)
+    W1 = theta1[0:len(W)]
+    b1 = theta1[len(W):]
+    cost_new = costFunction(x,y,W1,b1)
+    cp_df = -c*gradient_vec@gradient_vec
+    # Line Search Algorithm
+    while cost_new > (cost_old + alpha*cp_df):
+        alpha = rho * alpha
+        theta1_vec = theta0_vec - alpha*gradient_vec
+        theta1 = toMatrix(theta1_vec,dim_theta)
+        W1 = theta1[0:len(W)]
+        b1 = theta1[len(W):]
+        cost_new = costFunction(x,y,W1,b1)
+    return(alpha)
 
 def descent_NN_Model(x,y,neurons,eta,itr):
     """Neural Network model using gradient descent method"""
@@ -113,7 +158,9 @@ def plotRegion():
         ySave[i,1]=a[1][1]
     ySave = np.around(ySave,0)
     yc = ySave[:,0]
-    plt.scatter(xall[:,0]*yc,xall[:,1]*yc)
+    plt.scatter(xall[:,0]*yc,xall[:,1]*yc, color='gray')
+    plt.scatter(x1[:5], x2[:5], marker='o', color='b')
+    plt.scatter(x1[5:], x2[5:], marker='o', color='r')
     plt.show()
 
 def resetParameters(par):
@@ -193,13 +240,17 @@ def updateParameters(par,gradient,eta):
     return(update)
 
 
-W,b,cost = descent_NN_Model(x,y,
+W,b,cost = backtracking_NN_Model(x,y,
                             neurons=[2,2,3,2],
-                            eta=1,
                             itr=10**4)
-"""
-W,b,cost = stochastic_NN_Model(x,y,
-                               neurons=[2,2,3,2],
-                               eta = 0.05,
-                               itr = 10**6)
-"""
+
+##W,b,cost = descent_NN_Model(x,y,
+##                            neurons=[2,2,3,2],
+##                            eta=0.05,
+##                            itr=10**4)
+##
+##
+##W,b,cost = stochastic_NN_Model(x,y,
+##                               neurons=[2,2,3,2],
+##                               eta = 0.05,
+##                               itr = 10**6)
