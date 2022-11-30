@@ -11,6 +11,26 @@ from gradopt import *
 
 from itertools import product
 
+def perfplot(vec, vec_label, logscale=True):
+    loglabel = ''
+    if logscale:
+        plt.plot(np.log(vec), label=vec_label)
+        loglabel = 'log '
+    else:
+        plt.plot(vec, label=vec_label)
+    plt.xlabel('iteration k')
+    plt.ylabel(loglabel + 'F(x_k)')
+    plt.legend()
+    plt.show()
+
+def perfplot(vec, vec_label, logscale=True):
+    if logscale:
+        plt.plot(np.log(vec), label=vec_label)
+    else:
+        plt.plot(vec, label=vec_label)
+    plt.legend()
+    plt.show()
+
 def resplot(W, b):
     xh = np.arange(0,1,0.01)
     xv = np.arange(0,1,0.01)
@@ -306,11 +326,6 @@ W, b = W_b_vec_to_list(b_x_iters[-1], dims)
 perf(data_x, train_y, W, b)
 plot_vecs.append(b_f); plot_labels.append('backtrack 2')
 resplot(W, b)
-
-def perfplot(vec, vec_label):
-    plt.plot(vec, label=vec_label)
-    plt.legend()
-    plt.show()
 
 for i in [0, 2, 1, 3]:
     perfplot(plot_vecs[i], plot_labels[i])
