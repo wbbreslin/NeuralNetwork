@@ -18,16 +18,20 @@ def activate(x,W,b):
     return(a)
 
 def backtracking_NN_Model(x,y,neurons,itr):
-    """Neural Network model using gradient descent method"""
+    """Neural Network model using backtracking gradient descent method"""
     W,b = createNetwork(neurons)
     N = x.shape[0]
     cost = np.zeros(itr)
+    result = False
+    result2 = False
     for i in range(itr):
         dW = resetParameters(W)
         db = resetParameters(b)
+        a_vec = []
         for k in range(N):
             x0, y0 = selectXY(x,y,k)
             a = forwardPass(x0,W,b)
+            a_vec.append(a[-1])
             delta = backwardPass(y0,a,W)
             dW0, db0 = stochasticGradient(x0,a,delta)
             for j in range(len(W)):
@@ -37,8 +41,13 @@ def backtracking_NN_Model(x,y,neurons,itr):
         W = updateParameters(W,dW,eta)
         b = updateParameters(b,db,eta)
         newcost = costFunction(x,y,W,b)
-        cost[i] = newcost
-    return(W,b,cost)
+        result = checkResult(x,y,W,b)
+        if result2==True:
+            print(i)
+            break;
+        if result == True:
+            result2 = True
+    return(W,b,cost,a_vec)
 
 def backwardPass(y,a,W):
     """Backward pass through the network to calculate deltas"""
@@ -55,6 +64,26 @@ def backwardPass(y,a,W):
     delta.reverse()
     return(delta)
 
+def checkResult(x,y,W,b):
+    """The cost function to be minimized"""
+    n = x.shape[0]
+    costvec = np.zeros(n)
+    a_vec=[]
+    for i in range(n):
+        x0 = np.array([[x[i,0]],
+                       [x[i,1]]])
+        y0 = np.array([[y[i,0]],
+                       [y[i,1]]])
+        a = forwardPass(x0,W,b)
+        a_vec.append(a[-1])
+        costvec[i] = 0.5*np.linalg.norm(y0-np.around(a[-1]))**2
+    cost = sum(costvec)/10
+    if cost == 0:
+        print(a_vec)
+        print(costvec)
+        return(True)
+    else:
+        return(False)
 
 def costFunction(x,y,W,b):
     """The cost function to be minimized"""
@@ -66,13 +95,14 @@ def costFunction(x,y,W,b):
         y0 = np.array([[y[i,0]],
                        [y[i,1]]])
         a = forwardPass(x0,W,b)
-        costvec[i] = np.linalg.norm(y0-a[-1])**2
+        costvec[i] = 0.5*np.linalg.norm(y0-a[-1])**2
     cost = sum(costvec)/10
     return(cost)
     
 def createNetwork(neurons):
     """Initiates Network parameters given a list of neurons per layer"""
     W = []; b = []
+    np.random.seed(100)
     for i in range(len(neurons)-1):
         W.append(0.5*np.random.rand(neurons[i+1],neurons[i]))
         b.append(0.5*np.random.rand(neurons[i+1],1))
@@ -155,7 +185,7 @@ def plotRegion():
                       [xall[i,1]]])
         a = forwardPass(xp,W,b)
         ySave[i,0]=a[-1][0]
-        ySave[i,1]=a[1][1]
+        ySave[i,1]=a[-1][1]
     ySave = np.around(ySave,0)
     yc = ySave[:,0]
     plt.scatter(xall[:,0]*yc,xall[:,1]*yc, color='gray')
@@ -240,17 +270,17 @@ def updateParameters(par,gradient,eta):
     return(update)
 
 
-W,b,cost = backtracking_NN_Model(x,y,
-                            neurons=[2,2,3,2],
-                            itr=10**4)
+##W,b,cost,a_vec = backtracking_NN_Model(x,y,
+##                            neurons=[2,2,3,2],
+##                            itr=10**4)
 
 ##W,b,cost = descent_NN_Model(x,y,
 ##                            neurons=[2,2,3,2],
 ##                            eta=0.05,
 ##                            itr=10**4)
-##
-##
-##W,b,cost = stochastic_NN_Model(x,y,
-##                               neurons=[2,2,3,2],
-##                               eta = 0.05,
-##                               itr = 10**6)
+
+
+W,b,cost = stochastic_NN_Model(x,y,
+                               neurons=[2,2,3,2],
+                               eta = 0.05,
+                               itr = 10**5)
