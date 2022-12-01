@@ -277,7 +277,8 @@ def updateParameters(par,gradient,eta):
 """
 W,b,cost = backtracking_descent_NN_Model(x,y,
                                          neurons=[2,2,3,2],
-                                         itr=10**6)
+                                         itr=10**6,
+                                         stop=True)
 
 
 W,b,cost = descent_NN_Model(x,y,
