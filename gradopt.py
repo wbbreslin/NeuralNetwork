@@ -8,7 +8,7 @@ import numpy as np
 ### additional required arguments - optional
 ### keyword argument, containing 'df_k' == df(x_k) if it is already known
 
-def const_stepsize(x_k, f_k, p_k, alpha, **kwargs):
+def const_stepsize(x_k, f_k, p_k, alpha, f_evals, df_evals, d2f_evals, **kwargs):
     """ Constant step size function
 
         Inputs
@@ -29,7 +29,7 @@ def const_stepsize(x_k, f_k, p_k, alpha, **kwargs):
     return alpha, x_k, f_k
 
 
-def backtrack_stepsize(x_k, f_k, p_k, f, f_args, df, df_args, alpha, rho, c, **kwargs):
+def backtrack_stepsize(x_k, f_k, p_k, f, f_args, df, df_args, alpha, rho, c, f_evals, df_evals, d2f_evals, **kwargs):
     """ Backtracking step size function - for a given iterate x_k
         and direction p_k, it finds and returns a step size such
         that the first Wolfe condition W1 is satisfied. It also
@@ -66,15 +66,18 @@ def backtrack_stepsize(x_k, f_k, p_k, f, f_args, df, df_args, alpha, rho, c, **k
         df_k = kwargs['df_k']
     else:
         df_k = df(x_k, *df_args)
+        df_evals[-1] += 1
 
     # scale step size by rho until first Wolfe condition W1 is satisfied
     x_k1 = x_k + alpha * p_k
     f_k1 = f(x_k1, *f_args)
+    f_evals[-1] += 1
     c_p_df = c * p_k @ df_k
     while f_k1 > (f_k + alpha * c_p_df):
         alpha = rho * alpha
         x_k1 = x_k + alpha * p_k
         f_k1 = f(x_k1, *f_args)
+        f_evals[-1] += 1
 
     # return step size, next iterate x_{k+1}, f(x_{k+1})
     return alpha, x_k1, f_k1
@@ -86,7 +89,7 @@ def backtrack_stepsize(x_k, f_k, p_k, f, f_args, df, df_args, alpha, rho, c, **k
 ### additional required arguments - optional
 ### keyword argument, containing 'df_k' == df(x_k) if it is already known
 
-def steepest_dir(x_k, df, df_args, **kwargs):
+def steepest_dir(x_k, df, df_args, f_evals, df_evals, d2f_evals,**kwargs):
     """ Function for calculating the steepest descent search direction
 
         Inputs
@@ -105,10 +108,11 @@ def steepest_dir(x_k, df, df_args, **kwargs):
     # return steepest descent direction at x_k
     if 'df_k' in kwargs.keys():
         return -kwargs['df_k']
+    df_evals[-1] += 1
     return -df(x_k, *df_args)
 
 
-def newton_dir(x_k, f, f_args, df, df_args, d2f, d2f_args, **kwargs):
+def newton_dir(x_k, f, f_args, df, df_args, d2f, d2f_args, f_evals, df_evals, d2f_evals, **kwargs):
     """ Function for calculating the Newton's method search direction
 
         Inputs
@@ -135,7 +139,9 @@ def newton_dir(x_k, f, f_args, df, df_args, d2f, d2f_args, **kwargs):
         df_k = kwargs['df_k']
     else:
         df_k = df(x_k, *f_args)
+        df_evals[-1] += 1
     hess = d2f(x_k, *d2f_args)
+    d2f_evals[-1] += 1
     # use lstsq instead of solve in case Hessian is singular
     x, resid, ran, s = np.linalg.lstsq(hess, df_k, rcond=None)
     return -x
@@ -145,7 +151,7 @@ def newton_dir(x_k, f, f_args, df, df_args, d2f, d2f_args, **kwargs):
 ### general gradient descent algorithm
 
 def graditer(x_k, f, f_args, df, df_args, stepdir, stepdir_args, stepsize, stepsize_args, \
-        eps=1.0e-5, maxiter=1.0e+6):
+        eps=1.0e-5, maxiter=1.0e+6, F2=None):
     """ graditer(): Iterative line search optimization algorithm
 
         This solves an optimization problem where at each point one
@@ -182,17 +188,27 @@ def graditer(x_k, f, f_args, df, df_args, stepdir, stepdir_args, stepsize, steps
     niter = 0
     iters = np.array([x_k])
     f_k = f(x_k, *f_args)
+    f_evals = np.array([1])
     f_vals = np.array([f_k])
     df_k = df(x_k, *df_args)
+    df_evals = np.array([1])
+    d2f_evals = np.array([0])
     norm_df_k = np.linalg.norm(df_k)
     norm_df_vals = np.array([norm_df_k])
 
     # begin loop
     while niter < maxiter:
+        f_evals = np.append(f_evals, 0)
+        df_evals = np.append(df_evals, 0)
+        d2f_evals = np.append(d2f_evals, 0)
         #stepdir_args['x_k'] = x_k
-        p_k = stepdir(x_k, *stepdir_args, df_k=df_k, niter=niter)
+        p_k = stepdir(x_k, *stepdir_args, \
+                f_evals, df_evals, d2f_evals, \
+                df_k=df_k, niter=niter)
         # get next step size
-        alpha, _x_k1, _f_k1 = stepsize(x_k, f_k, p_k, *stepsize_args, df_k=df_k)
+        alpha, _x_k1, _f_k1 = stepsize(x_k, f_k, p_k, *stepsize_args, \
+                f_evals, df_evals, d2f_evals, \
+                df_k=df_k)
         # calculate next iterate
         if (_x_k1 != x_k).all():
             x_k = _x_k1
@@ -203,7 +219,9 @@ def graditer(x_k, f, f_args, df, df_args, stepdir, stepdir_args, stepsize, steps
             f_k = _f_k1
         else:
             f_k = f(x_k, *f_args)
+            f_evals[-1] += 1
         df_k = df(x_k, *df_args)
+        df_evals[-1] += 1
         norm_df_k = np.linalg.norm(df_k)
         iters = np.append(iters, [x_k], axis=0)
         f_vals = np.append(f_vals, f_k)
@@ -211,7 +229,7 @@ def graditer(x_k, f, f_args, df, df_args, stepdir, stepdir_args, stepsize, steps
         # increment number of iterations
         niter += 1
         # stop if |df(x_k)| < eps
-        if norm_df_k < eps:
+        if norm_df_k < eps or (F2 and F2(x_k, *f_args) == 0):
             break
     # return results
-    return iters, f_vals, norm_df_vals
+    return iters, f_vals, norm_df_vals, f_evals, df_evals, d2f_evals
