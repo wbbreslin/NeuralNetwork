@@ -17,6 +17,8 @@ Things to do:
 * Rename stochastic gradient function, as it is used in non stochastic NN models
 * Work on incorporating the hessian for Newton method
 * Modify code to work for response surface DoE models
+* Add convergence criteria to models
+* Add function evals for f and df and df2
 """
 
 def activate(x,W,b):
@@ -96,7 +98,10 @@ def backwardPass(y,a,W):
     return(delta)
 
 def checkResult(x,y,W,b):
-    """The cost function to be minimized"""
+    """
+    Used to terminate iterations once all data points correctly predicted
+    This function won't be needed once convergence criteria are implemented
+    """
     n = x.shape[0]
     costvec = np.zeros(n)
     a_vec=[]
