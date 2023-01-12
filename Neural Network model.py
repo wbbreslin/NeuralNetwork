@@ -11,6 +11,14 @@ y = np.vstack([y1,y2])
 x = np.transpose(np.vstack([x1,x2]))
 y = np.transpose(y)
 
+"""
+Things to do:
+* Add inverse function to go from [0,1] to R^n
+* Rename stochastic gradient function, as it is used in non stochastic NN models
+* Work on incorporating the hessian for Newton method
+* Modify code to work for response surface DoE models
+"""
+
 def activate(x,W,b):
     """Sigmoid activation function"""
     z = W@x+b
@@ -18,6 +26,7 @@ def activate(x,W,b):
     return(a)
 
 def backtrackingLineSearch(x,y,W,b,dW,db,alpha,rho,c):
+    """Backtracking search method for gradient descent"""
     # Concatenate Lists
     theta0 = W+b
     gradient = dW+db
@@ -295,13 +304,4 @@ W,b,cost = stochastic_NN_Model(x,y,
                                itr = 10**6,
                                stop=True)
 
-"""
-
-"""
-Run Stochastic Model for:
-stop = False
-itr = 10**5 ~15 sec (no convergence)
-itr = 3*10**5 ~45 sec (converges)
-
-then run both with stop=true to compare iterations
 """
