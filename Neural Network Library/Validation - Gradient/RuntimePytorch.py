@@ -2,6 +2,15 @@ import torch
 import torch.nn as nn
 import numpy as np
 import timeit
+
+"""
+Description:
+PyTorch evaluation of the gradient for a neural network
+
+Dataset: 
+SIAM 2019
+"""
+
 def new_column(input_tensor):
     num_rows = input_tensor.size(0)
     ones_column = torch.ones(num_rows, 1)
@@ -59,4 +68,4 @@ loss.backward()
 stop = timeit.default_timer()
 
 print('Time: ', stop - start)
-print(w0.grad)
+print(loss)
