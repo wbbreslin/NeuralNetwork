@@ -59,3 +59,4 @@ loss.backward()
 stop = timeit.default_timer()
 
 print('Time: ', stop - start)
+print(w0.grad)

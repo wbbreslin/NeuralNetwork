@@ -12,26 +12,17 @@ y_outcomes = np.array([[1,1,1,1,1,0,0,0,0,0],
                       [0,0,0,0,0,1,1,1,1,1]]).T
 
 """Define the neural network structure"""
-#np.random.seed(100)
+np.random.seed(100)
 neurons = np.array([2,2,3,2])
 activations = ["sigmoid","sigmoid","sigmoid","sigmoid"]
 weights, biases = base.create_network(neurons)
-augmented_weights = base.augment_network(weights, biases)
-"""
-states, augmented_states, first_derivatives = fom.forward_pass2(x_predictors,
-                                                                augmented_weights)
+weights = base.augment_network(weights, biases)
 
-Lambdas, gradients = fom.backward_pass2(states,
-                                        y_outcomes,
-                                        first_derivatives,
-                                        augmented_weights)
-"""
+y_predictions, weights, gradients = train.gradient_descent(x_predictors,
+                                                           y_outcomes,
+                                                           weights,
+                                                           fom.first_order_model,
+                                                           max_iterations=10**4)
 
-y_predictions, gradients = train.gradient_descent2(x_predictors,
-                                                  y_outcomes,
-                                                  augmented_weights,
-                                                  fom.first_order_model2,
-                                                  max_iterations=1000)
-
-#print(np.round(y_predictions,3))
+print(np.round(y_predictions,3))
 print(base.mean_squared_error(y_predictions, y_outcomes))

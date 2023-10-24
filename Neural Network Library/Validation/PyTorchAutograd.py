@@ -64,7 +64,7 @@ print("Gradient of w0:")
 print(grad_w0)
 
 print("Gradient of w1:")
-print(grad_w1*100)
+print(grad_w1)
 
 print("Gradient of w2:")
 print(grad_w2)
@@ -74,10 +74,10 @@ w1 = w1.detach().numpy()
 w2 = w2.detach().numpy()
 weights = [w0,w1,w2]
 
-y_predictions, weights, gradients = train.gradient_descent2(x_predictors,
+y_predictions, weights, gradients = train.gradient_descent(x_predictors,
                                                   y_outcomes,
                                                   weights,
-                                                  fom.first_order_model2,
+                                                  fom.first_order_model,
                                                   max_iterations=1)
 
 g0_auto = grad_w0.numpy()

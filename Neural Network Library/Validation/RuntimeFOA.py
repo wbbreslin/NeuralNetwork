@@ -25,12 +25,13 @@ weights = [w0,w1,w2]
 
 start = timeit.default_timer()
 
-y_predictions, weights, gradients = train.gradient_descent2(x_predictors,
+y_predictions, weights, gradients = train.gradient_descent(x_predictors,
                                                   y_outcomes,
                                                   weights,
-                                                  fom.first_order_model2,
+                                                  fom.first_order_model,
                                                   max_iterations=1)
 
 stop = timeit.default_timer()
 
 print('Time: ', stop - start)
+print(gradients[0])
