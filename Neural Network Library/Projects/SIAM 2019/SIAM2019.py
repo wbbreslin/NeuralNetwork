@@ -1,6 +1,5 @@
 import numpy as np
 import Base as base
-import FirstOrderModel as fom
 import TrainingAlgorithms as train
 
 """The data set of predictor variables"""
@@ -18,11 +17,12 @@ activations = ["sigmoid","sigmoid","sigmoid","sigmoid"]
 weights, biases = base.create_network(neurons)
 weights = base.augment_network(weights, biases)
 
-y_predictions, weights, gradients = train.gradient_descent(x_predictors,
-                                                           y_outcomes,
-                                                           weights,
-                                                           fom.first_order_model,
-                                                           max_iterations=10**4)
+nnet = {'Predictors': x_predictors,
+        'Outcomes': y_outcomes,
+        'Weights': weights,
+        'Neurons': neurons}
 
-print(np.round(y_predictions,3))
-print(base.mean_squared_error(y_predictions, y_outcomes))
+nnet = train.gradient_descent(nnet,max_iterations=10**4)
+
+print(np.round(nnet['States'][-1],3))
+#18.413428542000474

@@ -1,9 +1,9 @@
-import FirstOrderModel
-
-
-def gradient_descent(nnet,
-                     step_size = 0.25,
-                     max_iterations = 10**6):
+def gradient_descent(x_predictors,
+                     y_outcomes,
+                      weights,
+                      gradient_function,
+                      step_size = 0.25,
+                      max_iterations = 10**6):
     """
     Description
     --------------------
@@ -29,8 +29,8 @@ def gradient_descent(nnet,
 
     while iterations < max_iterations:
         iterations = iterations + 1
-        nnet = FirstOrderModel.first_order_model(nnet)
-        for k in range(len(nnet['Gradients'])):
-            nnet['Weights'][k] = nnet['Weights'][k] - step_size * nnet['Gradients'][k]
+        y_predictions, gradients, Lambdas = gradient_function(x_predictors,y_outcomes,weights)
+        for k in range(len(gradients)):
+            weights[k] = weights[k] - step_size * gradients[k]
 
-    return nnet
+    return y_predictions, weights, gradients

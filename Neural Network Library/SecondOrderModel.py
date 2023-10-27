@@ -1,203 +1,73 @@
 import numpy as np
+from scipy.sparse import coo_matrix, kron
 
-def TLM_model(states,
-              weights,
-              first_derivatives,
-              second_derivatives,
-              Lambdas,
-              vectors):
-    """
-    Tangent Linear Model (Forward Pass 2)
+def forward_second_pass(x):
+    return x
 
-    Inputs
-    --------------------
-    states              : List of states (x) at each layer of the NN
-    weights             : A list of the weight parameter matrices for the NN
-    first_derivatives   : List of Sigmoid first-derivative matrices for each NN layer
-    second_derivatives  : List of Sigmoid second-derivative matrices for each NN layer
-    Lambdas             : List of adjoint model states at each layer of the NN
-    vectors             : A list of vectors for the Hessian-vector product calculation
+def backward_second_pass(x):
+    return x
+def Av_Tensor(vector, weight, Lambda, second_derivative, n):
+    #may need to vec the Lambdas before diagflat
+    Av = np.kron(weight,np.eye(n)) \
+         @ np.diagflat(Lambda) \
+         @ second_derivative \
+         @ np.kron(weight.T,np.eye(n)) \
+         @ vector
+    return Av
 
-
-    Outputs
-    --------------------
-    Xis                 : List of tangent linear model states at each layer of the NN
-    A_matrices          : List of A matrices used for Hessian-vector product calculation
-    B_tensors           : List of B tensors used for Hessian-vector product calculation
-    C_tensors           : List of C tensors used for Hessian-vector product calculation
-    D_tensors           : List of D tensors used for Hessian-vector product calculation
-    """
-
-    Xi = np.zeros(states[0].shape)
-    Xis = [Xi]
-    A_matrices = []
-    B_tensors = []
-    C_tensors = []
-    D_tensors = []
-
-    for i in range(len(weights)):
-        LHS = first_derivatives[i] @ weights[i] @ Xi
-        RHS = np.kron(states[i].T, first_derivatives[i]) @ vectors[i]
-        new_Xi = LHS + RHS
-        A = A_matrix(weights[i], Lambdas[i + 1], second_derivatives[i])
-        B = B_tensor(states[i], weights[i], Lambdas[i + 1], first_derivatives[i], second_derivatives[i])
-        C = C_tensor(states[i], weights[i], Lambdas[i + 1], first_derivatives[i], second_derivatives[i])
-        D = D_tensor(states[i], Lambdas[i + 1], second_derivatives[i])
-        A_matrices.append(A)
-        B_tensors.append(B)
-        C_tensors.append(C)
-        D_tensors.append(D)
-        Xis.append(new_Xi)
-        Xi = new_Xi
-
-    return (Xis,
-            A_matrices,
-            B_tensors,
-            C_tensors,
-            D_tensors)
+def Bv_Tensor(vector, state, weight, Lambda, K, first_derivative, second_derivative):
+    n = state.shape[0]
+    p = weight.shape[0]
+    q = weight.shape[1]
+    Bv = np.kron(first_derivative.T @ np.diagflat(Lambda), np.eye(n*p)) \
+         @ K \
+         @ vector \
+         + np.kron(weight, np.eye(n)) \
+         @ np.diagflat(Lambda) \
+         @ second_derivative \
+         @ np.kron(np.eye(q), state) \
+         @ vector
+    return Bv
+def Dv_Tensor(vector, state, Lambda, second_derivative, q):
+    # may need to vec the Lambdas before diagflat
+    Dv = np.kron(np.eye(q), state.T) \
+         @ np.diagflat(Lambda) \
+         @ second_derivative \
+         @ np.kron(np.eye(q),state) \
+         @ vector
+    return Dv
 
 
-def SOA_model(states,
-              weights,
-              first_derivatives,
-              Xis,
-              vectors,
-              A_matrices,
-              B_tensors,
-              C_tensors,
-              D_tensors):
-    """
-    Tangent Linear Model (Forward Pass 2)
+def Kv_Tensor(weight, n):
+    p = weight.shape[0]
+    q = weight.shape[1]
+    Kv = coo_matrix((n*q*n*p,p*q))
+    for i in range(n):
+        S = generate_matrix(n,p,i)
+        T = generate_matrix(n,q,i)
+        Kv = Kv + kron(T,S)
+    return Kv
 
-    Inputs
-    --------------------
-    states              : List of states (x) at each layer of the NN
-    weights             : A list of the weight parameter matrices for the NN
-    first_derivatives   : List of Sigmoid first derivative matrices for each NN layer
-    Xis                 : List of tangent-linear model states at each layer of the NN
-    vectors             : A list of vectors for the Hessian-vector product calculation
-    A_matrices          : List of A matrices used for Hessian-vector product calculation
-    B_tensors           : List of B tensors used for Hessian-vector product calculation
-    C_tensors           : List of C tensors used for Hessian-vector product calculation
-    D_tensors           : List of D tensors used for Hessian-vector product calculation
+def generate_matrix(n, dim, itr):
+    rows = n*dim
+    columns = dim
+    data, row_indices, col_indices = [], [], []
+    for i in range(rows):
+        if i % n == itr:
+            row_indices.append(i)
+            col_indices.append(i // 2)
+            data.append(1)
 
-    Outputs
-    --------------------
-    Etas                : List of second-order adjoint model states at each layer of the NN
-    HVPs                : List of Hessian-vector products for each NN layer
-    """
+    S = coo_matrix((data, (row_indices, col_indices)), shape=(rows, columns))
+    return S
 
-    Eta = Xis[-1]
-    Etas = [Eta]
-    HVPs = []
-    for i in reversed(range(len(weights))):
-        left = weights[i].T @ first_derivatives[i] @ Eta
-        middle = A_matrices[i] @ Xis[i]
-        right = C_tensors[i] @ vectors[i]
-        new_Eta = left + middle + right
-        HVP = Hessian_Vector_Product(states[i],
-                                     first_derivatives[i],
-                                     Eta,
-                                     Xis[i],
-                                     B_tensors[i],
-                                     D_tensors[i],
-                                     vectors[i])
-        HVP = HVP.reshape(weights[i].shape,
-                          order='F')
-        Etas.append(new_Eta)
-        HVPs.append(HVP)
-        Eta = new_Eta
+"""
+weight = np.array([[1,2,3,4],
+              [5,6,7,8],
+              [9,10,11,12]])
 
-    Etas.reverse()
-    HVPs.reverse()
-    return Etas, HVPs
-
-def A_matrix(weight, Lambda, second_derivative):
-    """
-    Evaluation of Matrix (A) for the Hessian-vector Product
-    
-    Inputs
-    --------------------
-    weight               : A Weight matrix
-    Lambda               : A Lambda vector (adjoint variable)
-    second_derivative    : A Sigmoid second-derivative matrix
-
-    Outputs
-    --------------------
-    A                    : The (n x n) matrix A
-    """
-
-    Lambda_matrix = np.diagflat(Lambda)
-    A = weight.T @ Lambda_matrix @ second_derivative @ weight
-    return A
-    
-def B_tensor(state, weight, Lambda, first_derivative, second_derivative):
-    """
-    Evaluation of Tensor (B) for the Hessian-vector Product
-    
-    Inputs
-    --------------------
-    state                : A single data point for the predictor variable (n-dimensional vector)
-    weight               : An individual Weight matrix
-    Lambda               : An individual lambda vector (adjoint variable)
-    first_derivative     : A Sigmoid first-derivative matrix
-    second_derivative    : A Sigmoid second-derivative matrix
-
-    Outputs
-    --------------------
-    B                    : The (nm x n) tensor B
-    """
-
-    Lambda_matrix = np.diagflat(Lambda)
-    Identity = np.eye(state.shape[0])
-    LHS = np.kron(Lambda.T @ first_derivative, Identity)
-    RHS = np.kron(state.T, weight.T @ Lambda_matrix @ second_derivative)
-    B = (LHS+RHS).T
-    return B
-
-def C_tensor(state, weight, Lambda, first_derivative, second_derivative):
-    """
-    Evaluation of Tensor (C) for the Hessian-vector Product
-    
-    Inputs
-    --------------------
-    state                : A single data point for the predictor variable (n-dimensional vector)
-    weight               : An individual Weight matrix
-    Lambda               : An individual lambda vector (adjoint variable)
-    first_derivative     : A Sigmoid first-derivative matrix
-    second_derivative    : A Sigmoid second-derivative matrix
-
-    Outputs
-    --------------------
-    C                    : The (n x nm) tensor C
-    """
-
-    Lambda_matrix = np.diagflat(Lambda)
-    Identity = np.eye(state.shape[0])
-    LHS = np.kron(state, Lambda_matrix @ second_derivative @ weight)
-    RHS = np.kron(Identity, first_derivative @ Lambda)
-    C = (LHS+RHS).T
-    return C
-
-def D_tensor(state, Lambda, second_derivative):
-    """
-    Evaluation of Tensor (D) for the Hessian-vector Product
-    
-    Inputs
-    --------------------
-    state                : A single data point for the predictor variable (n-dimensional vector)
-    Lambda               : An individual lambda vector (adjoint variable)
-    second_derivative    : A Sigmoid second-derivative matrix
-
-    Outputs
-    --------------------
-    D                    : The (nm x nm) dimensional tensor D
-    """
-
-    Lambda_matrix = np.diagflat(Lambda)
-    D = np.kron(np.outer(state,state), Lambda_matrix @ second_derivative)
-    return D
-
-def Hessian_Vector_Product(x, first_derivative, Eta, Xi, B_tensor, D_tensor, vector):
-    HVP = np.kron(first_derivative, x) @ Eta + B_tensor @ Xi + D_tensor @ vector
-    return HVP
+S1 = generate_matrix(2,3,0)
+S2 = generate_matrix(2,3,1)
+T1 = generate_matrix(2,4,0)
+T2 = generate_matrix(2,4,1)
+"""

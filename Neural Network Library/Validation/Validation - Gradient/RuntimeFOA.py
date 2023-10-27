@@ -1,5 +1,5 @@
 import numpy as np
-import FirstOrderModel as fom
+#import FirstOrderModel as fom
 import TrainingAlgorithms as train
 import timeit
 
@@ -31,16 +31,19 @@ w2 = np.array([[1.6, 1.7],
                [2.2, 2.3]])
 
 weights = [w0,w1,w2]
+neurons = np.array([2,2,3,2])
+activations = ["sigmoid","sigmoid","sigmoid","sigmoid"]
+
+nnet = {'Predictors': x_predictors,
+        'Outcomes': y_outcomes,
+        'Weights': weights,
+        'Neurons': neurons}
 
 start = timeit.default_timer()
-
-y_predictions, weights, gradients = train.gradient_descent(x_predictors,
-                                                  y_outcomes,
-                                                  weights,
-                                                  fom.first_order_model,
-                                                  max_iterations=1)
+nnet = train.gradient_descent(nnet, max_iterations=1)
 
 stop = timeit.default_timer()
+time = stop-start
 
-print('Time: ', stop - start)
-print(gradients[0])
+print(time)
+

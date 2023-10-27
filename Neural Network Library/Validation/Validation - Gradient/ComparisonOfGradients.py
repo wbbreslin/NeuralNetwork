@@ -1,16 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-import timeit
-
-"""
-Description:
-PyTorch evaluation of the gradient for a neural network
-
-Dataset: 
-SIAM 2019
-"""
-
+import TrainingAlgorithms as train
 def new_column(input_tensor):
     num_rows = input_tensor.size(0)
     ones_column = torch.ones(num_rows, 1)
@@ -39,11 +30,6 @@ w0 = torch.tensor([[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]], requires_grad=True, dtyp
 w1 = torch.tensor([[0.7, 0.8, 0.9], [1.0, 1.1, 1.2], [1.3, 1.4, 1.5]], requires_grad=True, dtype=torch.float64)
 w2 = torch.tensor([[1.6, 1.7], [1.8, 1.9], [2.0, 2.1], [2.2, 2.3]], requires_grad=True, dtype=torch.float64)
 
-# Create target tensor
-y_target = torch.tensor(y_outcomes, dtype=torch.float64)
-
-start = timeit.default_timer()
-
 z0 = new_column(x0)
 x1 = torch.mm(z0, w0)
 x1 = torch.sigmoid(x1)
@@ -59,13 +45,47 @@ x3 = torch.sigmoid(x3)
 # Define a loss function (e.g., mean squared error)
 criterion = CustomLoss()
 
+# Create target tensor (replace with your actual target)
+y_target = torch.tensor(y_outcomes, dtype=torch.float64)
+
 # Calculate the loss
 loss = criterion(x3, y_target)
 
 # Compute gradients
 loss.backward()
 
-stop = timeit.default_timer()
+# Access the gradients of w0, w1, and w2
+grad_w0 = w0.grad
+grad_w1 = w1.grad
+grad_w2 = w2.grad
 
-print('Time: ', stop - start)
-print(loss)
+w0 = w0.detach().numpy()
+w1 = w1.detach().numpy()
+w2 = w2.detach().numpy()
+
+weights = [w0,w1,w2]
+neurons = np.array([2,2,3,2])
+activations = ["sigmoid","sigmoid","sigmoid","sigmoid"]
+
+nnet = {'Predictors': x_predictors,
+        'Outcomes': y_outcomes,
+        'Weights': weights,
+        'Neurons': neurons}
+
+nnet = train.gradient_descent(nnet,max_iterations=1)
+
+g0_auto = grad_w0.numpy()
+g1_auto = grad_w1.numpy()
+g2_auto = grad_w2.numpy()
+
+g0_math = nnet['Gradients'][0]
+g1_math = nnet['Gradients'][1]
+g2_math = nnet['Gradients'][2]
+
+d0 = g0_auto-g0_math
+d1 = g1_auto-g1_math
+d2 = g2_auto-g2_math
+
+print(d0)
+print(d1)
+print(d2)

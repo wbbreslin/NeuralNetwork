@@ -1,5 +1,6 @@
 import numpy as np
-import FirstOrderModel as fom
+import FirstOrderModelOld as fom
+# Need to fix this to fit into the new FOM framework
 
 """
 Description:
