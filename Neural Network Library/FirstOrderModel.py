@@ -42,6 +42,7 @@ def forward_pass(nnet):
     """
     states = [nnet['Predictors']]
     augmented_states = []
+    augmented_weights = []
     first_derivatives = []
     x_predictors = nnet['Predictors']
     weights = nnet['Weights']
@@ -50,12 +51,16 @@ def forward_pass(nnet):
         augmented_states.append(z)
         xw = z @ weights[i]
         x_predictors = base.sigmoid(xw)
-        d1 = base.sigmoid_derivative(xw)
+        xw_vec, dims = base.to_vector(xw)
+        d1 = np.diagflat(base.sigmoid_derivative(xw_vec))
         first_derivatives.append(d1)
         states.append(x_predictors)
+        aug_weight = A @ weights[i]
+        augmented_weights.append(aug_weight)
 
     output = {'States': states,
               'Augmented_States': augmented_states,
+              'Augmented_Weights': augmented_weights,
               'First_Derivatives': first_derivatives}
 
     nnet.update(output)
@@ -117,7 +122,7 @@ def backward_pass(nnet):
     for i in range(len(gradients)):
         dims = weights[i].shape
         gradients[i] = base.to_matrix(gradients[i],dims)
-        Lambdas[i] = base.to_matrix(Lambdas[i],(n,dimensions[i-1]))
+        #Lambdas[i] = base.to_matrix(Lambdas[i],(n,dimensions[i-1]))
 
     output = {'Lambdas': Lambdas,
               'Gradients': gradients}

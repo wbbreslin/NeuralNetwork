@@ -1,6 +1,7 @@
 import numpy as np
 import Base as base
 
+#Update finite difference code, then delete
 def first_order_model(x_predictors, y_outcomes, weights):
     """
     Description

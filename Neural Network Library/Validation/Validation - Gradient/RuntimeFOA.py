@@ -46,4 +46,5 @@ stop = timeit.default_timer()
 time = stop-start
 
 print(time)
+print(nnet['Gradients'][0])
 

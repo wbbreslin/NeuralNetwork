@@ -146,8 +146,9 @@ def sigmoid_derivative(x):
     If x is a vector, y will be a matrix
     If x is a matrix, y will be a tensor (a higher-dimensional matrix)
     """
-    x, dims = to_vector(x)
-    y = np.diagflat(sigmoid(x)*(1-sigmoid(x)))
+    #x, dims = to_vector(x)
+    #y = np.diagflat(sigmoid(x)*(1-sigmoid(x)))
+    y = sigmoid(x) * (1 - sigmoid(x))
     return y
 
 def sigmoid_second_derivative(x):
@@ -171,8 +172,7 @@ def sigmoid_second_derivative(x):
     If x is a vector, y will be a matrix
     If x is a matrix, y will be a tensor (a higher-dimensional matrix)
     """
-    x, dims = to_vector(x)
-    y = np.diagflat(sigmoid(x)*(1-sigmoid(x))*(1-2*sigmoid(x)))
+    y = sigmoid(x)*(1-sigmoid(x))*(1-2*sigmoid(x))
     return y
 
 def to_matrix(vector, matrix_dimension):
