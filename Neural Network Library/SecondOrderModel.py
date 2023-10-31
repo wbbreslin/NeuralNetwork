@@ -35,15 +35,23 @@ def backward_pass(nnet, vectors, KTensors):
     n = nnet['Augmented_States'][0].shape[0]
     omega = nnet['Thetas'][-1]
     omegas = [omega]
+    Hv_Products = []
     for i in reversed(range(len(nnet['Augmented_Weights']))):
+        q = nnet['Augmented_Weights'][i].shape[1]
         gradient = np.kron(nnet['Augmented_Weights'][i],np.eye(n)) @ nnet['First_Derivatives'][i]
+        Hv = np.kron(np.eye(q),nnet['Augmented_States'][i].T) \
+             @ omega\
+             + Dv_Tensor(nnet, vectors, i) \
+             + Cv_Tensor(nnet, KTensors, i)
         new_omega = gradient @ omega + Av_Tensor(nnet, i) + Bv_Tensor(nnet, vectors, KTensors, i)
         omegas.append(new_omega)
+        Hv_Products.append(Hv)
         omega = new_omega
         #gradfx omega + Bv + A*theta
 
     omegas.reverse()
-    output = {'Omegas': omegas}
+    output = {'Omegas': omegas,
+              'Hv_Products': Hv_Products}
     nnet.update(output)
 
     return nnet
@@ -72,15 +80,29 @@ def Bv_Tensor(nnet, vectors, KTensors, i):
          @ vectors[i]
     return Bv
 
-def Dv_Tensor_Old(vector, state, Lambda, second_derivative, q):
-    # may need to vec the Lambdas before diagflat
-    Dv = np.kron(np.eye(q), state.T) \
-         @ np.diagflat(Lambda) \
-         @ second_derivative \
-         @ np.kron(np.eye(q),state) \
+def Cv_Tensor(nnet, KTensors, i):
+    vector = nnet['Thetas'][i]
+    n = nnet['Augmented_States'][0].shape[0]
+    p = nnet['Augmented_Weights'][i].shape[0]
+    q = nnet['Augmented_Weights'][i].shape[1]
+    Cv = (np.kron(nnet['Lambdas'][i+1].T @ nnet['First_Derivatives'][i], np.eye(n*p))
+         @ KTensors[i]).T \
+         @ vector \
+         + (np.kron(nnet['Augmented_Weights'][i], np.eye(n))
+         @ np.diagflat(nnet['Lambdas'][i+1])
+         @ nnet['Second_Derivatives'][i]
+         @ np.kron(np.eye(q), nnet['Augmented_States'][i])).T \
          @ vector
-    return Dv
+    return Cv
 
+def Dv_Tensor(nnet, vectors, i):
+    q = nnet['Augmented_Weights'][i].shape[1]
+    Dv = np.kron(np.eye(q), nnet['Augmented_States'][i].T) \
+         @ np.diagflat(nnet['Lambdas'][i+1]) \
+         @ nnet['Second_Derivatives'][i] \
+         @ np.kron(np.eye(q), nnet['Augmented_States'][i]) \
+         @ vectors[i]
+    return Dv
 
 def Kron_Tensors(weight, n):
     dimensions = weight.shape
@@ -92,7 +114,6 @@ def Kron_Tensors(weight, n):
     A = np.hstack((A1, A2))
 
     Kv = coo_matrix((n*q*n*p,(p+1)*q))
-    print(Kv.shape)
     for i in range(n):
         S = generate_matrix(n,p,i)
         T = generate_matrix(n,q,i)
@@ -111,15 +132,3 @@ def generate_matrix(n, dim, itr):
 
     S = coo_matrix((data, (row_indices, col_indices)), shape=(rows, columns))
     return S
-
-"""
-weight = np.array([[1,2,3,4],
-              [5,6,7,8],
-              [9,10,11,12]])
-
-S1 = generate_matrix(3,3,0)
-S2 = generate_matrix(2,3,1)
-T1 = generate_matrix(2,4,0)
-T2 = generate_matrix(2,4,1)
-
-"""
