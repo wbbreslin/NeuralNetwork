@@ -56,17 +56,31 @@ activations = ["sigmoid","sigmoid","sigmoid","sigmoid"]
 weights, biases = base.create_network(neurons)
 augmented_weights, constants = base.augment_network(weights, biases)
 ```
+We create a neural network object as a dictionary.
+```{python}
+nnet = {'Predictors': x_predictors,
+        'Outcomes': y_outcomes,
+        'Weights': weights,
+        'Neurons': neurons}
+```
 Now we train the network by calling the optimization algorithms from ```TrainingAlgorithms.py```.
 ```{python}
 """Train the neural network"""
-y_predictions, gradients = train.gradient_descent(x_predictors,
-                                                  y_outcomes,
-                                                  weights,
-                                                  fom.first_order_model,
-                                                  max_iterations=10**4)
+nnet = train.gradient_descent(nnet,max_iterations=10**4)
 ```
-The ```gradient_descent``` function requires a gradient function as one of its inputs. Here, we input the ```first_order_model```.
-
+Various aspects of the model can be accessed through the following dictionary keys.
+```{python}
+dict_keys([ 'Predictors',
+            'Outcomes',
+            'Weights',
+            'Neurons',
+            'States',
+            'Augmented_States',
+            'Augmented_Weights',
+            'First_Derivatives',
+            'Lambdas',
+            'Gradients'])
+```
 Here is a visualization of the trained NN. 
 
 <p align="center">
@@ -74,50 +88,29 @@ Here is a visualization of the trained NN.
 </p>
 
 ## Calculating Hessian-Vector Products
-(This section is outdated, and needs to be fixed)
-To calculate the Hessian-Vector product, we do a forward and backward pass through the first-order model, then do another forward and backward pass using the second-order model.
+To calculate the Hessian-Vector product, we do a forward and backward pass through the first-order model, then do another forward and backward pass using the second-order model. For many applications, we start with an already trained neural network, and do another forward and backward pass in the second-order model.
+
+First create some vectors to use for the Hessian-vector products. For simplicity, here we just use the gradients. These start as matrices, so these need to be converted to vectors.
 
 ```{python}
-x, y = base.select_xy(x_predictors, y_outcomes, 3)
+vectors = nnet['Gradients'].copy()
+for i in range(len(vectors)):
+    vectors[i], dims = base.to_vector(vectors[i])
 ```
 
-Then we pass it through the first-order model.
-
+The second-order model also requires the following constant tensors
 ```{python}
-states, first_derivatives, second_derivatives = fom.forward_pass(x, weights)
-
-Lambdas, gradients = fom.FOA_model(states,
-                                   y,
-                                   first_derivatives,
-                                   weights)
+KTensors = []
+for i in range(len(nnet['Weights'])):
+    KT = som.Kron_Tensors(nnet['Weights'][i],10)
+    KTensors.append(KT)
 ```
-
-And then the second-order model.
-
-
+With the chosen vectors, we can now do the forward and backward passes in the second-order model.
 ```{python}
-Xis, A_matrices, B_tensors, C_tensors, D_tensors = som.TLM_model(states,
-                                                                 weights,
-                                                                 first_derivatives,
-                                                                 second_derivatives,
-                                                                 Lambdas,
-                                                                 vectors)
-Etas, HVPs = som.SOA_model(states,
-                           weights,
-                           first_derivatives,
-                           Xis,
-                           vectors,
-                           A_matrices,
-                           B_tensors,
-                           C_tensors,
-                           D_tensors)
+nnet = som.forward_pass(nnet,vectors)
+nnet = som.backward_pass(nnet, vectors, KTensors)
 ```
-
-Some useful outputs you can view include the predicted Y values, the number of iterations for the training algorithm to converge, the gradients, and the hessian-vector products.
-
+The second-order model adds the following keys to ```nnet```.
 ```{python}
-print(np.round(y_predictions,2))
-print(iterations)
-print(gradients)
-print(HVPs)
+['Thetas', 'Second_Derivatives', 'Omegas', 'Hv_Products']
 ```
