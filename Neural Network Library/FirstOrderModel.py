@@ -102,11 +102,11 @@ def backward_pass(nnet):
     for i in reversed(range(len(weights))):
         Z, A, B = base.augment_predictor(states[i])
 
-        gradient = np.kron(np.eye(p),Z).T \
+        gradient = np.kron(np.eye(p),Z.T) \
                    @ first_derivatives[i] \
                    @ Lambda
 
-        new_Lambda = np.kron((A @ weights[i]).T,np.eye(n)).T\
+        new_Lambda = np.kron((A @ weights[i]),np.eye(n))\
                      @ first_derivatives[i] \
                      @ Lambda
 

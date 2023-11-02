@@ -22,26 +22,14 @@ nnet = {'Predictors': x_predictors,
         'Weights': weights,
         'Neurons': neurons}
 
-nnet = train.gradient_descent(nnet,max_iterations=10**4)
+nnet = train.gradient_descent(nnet,max_iterations=10**0)
 
 # Generate vectors of appropriate dimensions for testing purposes
 vectors = nnet['Gradients'].copy()
 for i in range(len(vectors)):
     vectors[i], dims = base.to_vector(vectors[i])
 
-# Create the K Tensors outside of
-KTensors = []
-for i in range(len(nnet['Weights'])):
-    KT = som.Kron_Tensors(nnet['Weights'][i],10)
-    KTensors.append(KT)
-
 
 nnet = som.forward_pass(nnet,vectors)
-nnet = som.backward_pass(nnet, vectors, KTensors)
-print(nnet['Hv_Products'])
-#Dv = som.Dv_Tensor(nnet, vectors, 0)
-#print(nnet['Omegas'])
-#print(np.round(nnet['States'][-1],3))
-#18.413428542000474
-
-#print(base.sigmoid_derivative(x_predictors).shape)
+bv = som.Bv_Tensor(nnet, vectors, 0)
+#nnet = som.backward_pass(nnet, vectors, KTensors)

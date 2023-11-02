@@ -1,15 +1,7 @@
-import torch
 import torch.nn as nn
 import numpy as np
+import torch
 import timeit
-
-"""
-Description:
-PyTorch evaluation of the gradient for a neural network
-
-Dataset: 
-SIAM 2019
-"""
 
 def new_column(input_tensor):
     num_rows = input_tensor.size(0)
@@ -55,10 +47,6 @@ x2 = torch.sigmoid(x2)
 z2 = new_column(x2)
 x3 = torch.mm(z2, w2)
 x3 = torch.sigmoid(x3)
-
-stop = timeit.default_timer()
-print(stop-start)
-start = timeit.default_timer()
 
 # Define a loss function (e.g., mean squared error)
 criterion = CustomLoss()

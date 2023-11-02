@@ -2,14 +2,6 @@ import numpy as np
 import FirstOrderModelOld as fom
 # Need to fix this to fit into the new FOM framework
 
-"""
-Description:
-Finite-difference approximation of the gradient for a neural network
-
-Dataset: 
-SIAM 2019
-"""
-
 
 """The data set of predictor variables"""
 x_predictors = np.array([[0.1,0.3,0.1,0.6,0.4,0.6,0.5,0.9,0.4,0.7],
