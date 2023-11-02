@@ -45,10 +45,10 @@ x_y0 = x[y[:, 0] == 1]
 x_y1 = x[y[:, 1] == 1]
 
 # Create a scatterplot for Y=0 points
-plt.scatter(x_y0[:, 0], x_y0[:, 1], c='bisque', label='Predicted Y=0', marker='s')
+plt.scatter(x_y0[:, 0], x_y0[:, 1], c='bisque', label='Predicted Failure', marker='s')
 
 # Create a scatterplot for Y=1 points
-plt.scatter(x_y1[:, 0], x_y1[:, 1], c='palegreen', label='Predicted Y=1', marker='s')
+plt.scatter(x_y1[:, 0], x_y1[:, 1], c='palegreen', label='Predicted Success', marker='s')
 
 # Compute and plot the convex hull around Y=1 points with a filled interior
 hull = ConvexHull(x_y1)
@@ -65,7 +65,7 @@ plt.scatter(x2[:, 0], x2[:, 1], color = 'black', label='Success', marker='o', s=
 plt.xlabel('X1 - Axis')
 plt.ylabel('X2 - Axis')
 plt.title('Neural Network Predictions')
-plt.legend()
+plt.legend(loc=2)
 plt.grid(True)
 plt.show()
 
