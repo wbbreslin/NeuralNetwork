@@ -25,7 +25,7 @@ nnet = {'Predictors': x_predictors,
         'Weights': weights,
         'Neurons': neurons}
 
-nnet = train.gradient_descent(nnet,max_iterations=10**4)
+nnet = train.gradient_descent(nnet,max_iterations=1)
 def ordered_pair_matrix(start, end, step):
     x = np.arange(start, end + step, step)
     y = np.arange(start, end + step, step)
@@ -41,8 +41,8 @@ y = np.round(nnet['States'][-1])
 
 
 # Separate the data into two sets based on Y values
-x_y0 = x[y[:, 0] == 1]
-x_y1 = x[y[:, 1] == 1]
+x_y0 = x[(y[:, 0] == 1) & (y[:, 1] == 0)]
+x_y1 = x[(y[:, 0] == 0) & (y[:, 1] == 1)]
 
 # Create a scatterplot for Y=0 points
 plt.scatter(x_y0[:, 0], x_y0[:, 1], c='bisque', label='Predicted Failure', marker='s')
@@ -61,12 +61,16 @@ x2 = x_predictors[y_outcomes[:, 1] == 1]
 plt.scatter(x1[:, 0], x1[:, 1], label='Failure', marker='x', s=75, color = 'black')
 plt.scatter(x2[:, 0], x2[:, 1], color = 'black', label='Success', marker='o', s=75)
 
+#plt.xlim(0, 1)  # Replace x_min and x_max with your desired values
+#plt.ylim(0, 1)
 
 plt.xlabel('X1 - Axis')
 plt.ylabel('X2 - Axis')
-plt.title('Neural Network Predictions')
+plt.title('Neural Network Predictions (Iterations: None)')
 plt.legend(loc=2)
 plt.grid(True)
 plt.show()
 
 
+print(np.sum(y))
+print(y.shape)

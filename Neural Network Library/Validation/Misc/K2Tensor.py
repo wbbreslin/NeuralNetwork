@@ -5,7 +5,18 @@ import Base as base
 from scipy.sparse import coo_matrix, kron
 
 """
-Old Method
+Old Method: Kron_Tensors() and generate_matrix()
+New Method: K2v_Product()
+
+Objective:
+1) Compute K.T @ v
+2) Measure the error to ensure accuracy of new method to the exact old method
+3) Compare runtimes between methods
+
+Results:
+1) New method generates exact same output as old method
+2) Runtime of new method for n=1000, p=2, q=4 is  0.01698 seconds
+3) Runtime of old method for n=1000, p=2, q=4 is 32.72858 seconds
 """
 
 def Kron_Tensors(weight, n):
@@ -39,50 +50,56 @@ def generate_matrix(n, dim, itr):
     S = coo_matrix((data, (row_indices, col_indices)), shape=(rows, columns))
     return S
 
-#Do not go bigger...
-n = 2
+def K2v_Product(weight, n, vector):
+    p = weight.shape[0] - 1
+    q = weight.shape[1]
+    vector = base.to_matrix(vector,(n*p*n,q))
+    P = np.eye(n*p)
+    P, dim = base.to_vector(P)
+    P = base.to_matrix(P,((p,n*n*p)))
+    out = P@vector
+    zero = np.zeros((1,q))
+    out = np.vstack((zero,out))
+    out, dims = base.to_vector(out)
+    return(out)
 
-weight = np.array([[1,2,3],
-                   [5,6,7],
-                   [5,6,7]])
+n = 1000 #Do not go bigger runtime for old method is p*n**3
+
+weight = np.array([[1,2,3,4],
+                   [5,6,7,4],
+                   [5,6,7,4]])
 
 vec, dim = base.to_vector(weight)
 
 
-#RUNTIME: 24.790450749977026 seconds
+#RUNTIME: 24.790450749977026 seconds for n=1000
 start = timeit.default_timer()
 direct = Kron_Tensors(weight, n)
-print(direct.shape)
 #direct = direct @ vec
 stop = timeit.default_timer()
 direct_time = stop-start
 
-start = timeit.default_timer()
-indirect = som.Kv_Product(weight,n,vec)
-stop = timeit.default_timer()
-indirect_time = stop-start
-
-'''
-print("Error between results:")
-print(np.sum(indirect-direct))
-print("Indirect Method Runtime:")
-print(indirect_time)
-print("Direct Method Runtime:")
-print(direct_time)
-'''
 
 #n = 2, p = 2, q = 3
 p = weight.shape[0]-1
 q = weight.shape[1]
-vector = np.array([i for i in range(1, n*n*q*p+ 1)]).reshape(-1,1)
-print(base.to_matrix(vector,(n*p*n,q)))
-#print(M.shape)
-print(direct.T@vector)
-#W = np.array([[1,4,7],[2,5,8],[3,6,9]])
-#P = np.eye(3)[:, ::-1]
 
-#This works for my current example, need to generalize
-P = np.eye(4)[:, [0,3,2,1]]
-P, dim = base.to_vector(P)
-P = base.to_matrix(P, ((n,n*n*p)))
-print(P)
+'''Create a dummy vector'''
+vector = np.random.rand(n*n*p*q,1)
+
+"""K.Tv Product From direct method"""
+DirectMethod = direct.T @ vector
+
+
+start = timeit.default_timer()
+FastMethod = K2v_Product(weight, n, vector)
+stop = timeit.default_timer()
+indirect_time = stop-start
+error = np.sum((DirectMethod-FastMethod)**2)
+
+print("Error between results:")
+print(error)
+print("Indirect Method Runtime:")
+print(indirect_time)
+print("Direct Method Runtime:")
+print(direct_time)

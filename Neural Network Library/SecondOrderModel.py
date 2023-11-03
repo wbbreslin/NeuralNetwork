@@ -74,7 +74,7 @@ def Bv_Tensor(nnet, vectors, i):
     p = nnet['Augmented_Weights'][i].shape[0]
     q = nnet['Augmented_Weights'][i].shape[1]
     Bv = np.kron(nnet['Lambdas'][i+1].T @ nnet['First_Derivatives'][i], np.eye(n*p)) \
-         @ Kv_Product(nnet['Weights'][i],n, vectors[i]) \
+         @ K1v_Product(nnet['Weights'][i],n, vectors[i]) \
          + np.kron(nnet['Augmented_Weights'][i], np.eye(n)) \
          @ np.diagflat(nnet['Lambdas'][i+1]) \
          @ nnet['Second_Derivatives'][i] \
@@ -107,7 +107,7 @@ def Dv_Tensor(nnet, vectors, i):
          @ vectors[i]
     return Dv
 
-def Kv_Product(weight, n, vector):
+def K1v_Product(weight, n, vector):
     matrix = base.to_matrix(vector, weight.shape)
     matrix = matrix[1:,]
     vector, dim = base.to_vector(matrix)
@@ -115,3 +115,15 @@ def Kv_Product(weight, n, vector):
     out, dim = base.to_vector(out)
     return(out)
 
+def K2v_Product(weight, n, vector):
+    p = weight.shape[0] - 1
+    q = weight.shape[1]
+    vector = base.to_matrix(vector,(n*p*n,q))
+    P = np.eye(n*p)
+    P, dim = base.to_vector(P)
+    P = base.to_matrix(P,((p,n*n*p)))
+    out = P@vector
+    zero = np.zeros((1,q))
+    out = np.vstack((zero,out))
+    out, dims = base.to_vector(out)
+    return(out)
