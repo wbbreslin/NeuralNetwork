@@ -8,6 +8,7 @@ def forward_pass(nnet, vectors):
     thetas = [theta]
     second_derivatives = []
     n = nnet['Augmented_States'][0].shape[0]
+    print(theta)
 
     for i in range(len(nnet['Augmented_Weights'])):
         q = nnet['Augmented_Weights'][i].shape[1]
@@ -17,6 +18,7 @@ def forward_pass(nnet, vectors):
                     + nnet['First_Derivatives'][i] \
                     @ np.kron(np.eye(q), nnet['Augmented_States'][i]) \
                     @ vectors[i]
+        print(new_theta)
         thetas.append(new_theta)
         xw = nnet['Augmented_States'][i] @ nnet['Weights'][i]
         xw_vec, dims = base.to_vector(xw)
@@ -30,7 +32,7 @@ def forward_pass(nnet, vectors):
 
 
 
-def backward_pass(nnet, vectors, KTensors):
+def backward_pass(nnet, vectors):
     n = nnet['Augmented_States'][0].shape[0]
     omega = nnet['Thetas'][-1]
     omegas = [omega]
@@ -38,11 +40,13 @@ def backward_pass(nnet, vectors, KTensors):
     for i in reversed(range(len(nnet['Augmented_Weights']))):
         q = nnet['Weights'][i].shape[1]
         gradient = np.kron(nnet['Augmented_Weights'][i],np.eye(n)) @ nnet['First_Derivatives'][i]
-        Hv = np.kron(np.eye(q),nnet['Augmented_States'][i].T) \
+        Hv = np.kron(np.eye(q),nnet['Augmented_States'][i].T) @ nnet['First_Derivatives'][i] \
              @ omega\
              + Dv_Tensor(nnet, vectors, i) \
-             + Cv_Tensor(nnet, KTensors, i)
-        new_omega = gradient @ omega + Av_Tensor(nnet, i) + Bv_Tensor(nnet, vectors, KTensors, i)
+             + Cv_Tensor(nnet, i)
+        #print(Dv_Tensor(nnet, vectors, i))
+        #print(Cv_Tensor(nnet, i))
+        new_omega = gradient @ omega + Av_Tensor(nnet, i) + Bv_Tensor(nnet, vectors, i)
         omegas.append(new_omega)
         dims = nnet['Gradients'][i].shape
         Hv = base.to_matrix(Hv, dims)
@@ -83,14 +87,13 @@ def Bv_Tensor(nnet, vectors, i):
     return Bv
 
 """Need to fix this"""
-def Cv_Tensor(nnet, KTensors, i):
+def Cv_Tensor(nnet, i):
     vector = nnet['Thetas'][i]
     n = nnet['Augmented_States'][0].shape[0]
     p = nnet['Augmented_Weights'][i].shape[0]
     q = nnet['Augmented_Weights'][i].shape[1]
-    Cv = (np.kron(nnet['Lambdas'][i+1].T @ nnet['First_Derivatives'][i], np.eye(n*p))
-         @ KTensors[i]).T \
-         @ vector \
+    v = np.kron(nnet['First_Derivatives'][i] @ nnet['Lambdas'][i+1], np.eye(n*p)) @ vector
+    Cv = K2v_Product(nnet['Weights'][i], n, v) \
          + (np.kron(nnet['Augmented_Weights'][i], np.eye(n))
          @ np.diagflat(nnet['Lambdas'][i+1])
          @ nnet['Second_Derivatives'][i]
@@ -113,7 +116,7 @@ def K1v_Product(weight, n, vector):
     vector, dim = base.to_vector(matrix)
     out = np.kron(vector, np.eye(n))
     out, dim = base.to_vector(out)
-    return(out)
+    return out
 
 def K2v_Product(weight, n, vector):
     p = weight.shape[0] - 1
@@ -121,9 +124,9 @@ def K2v_Product(weight, n, vector):
     vector = base.to_matrix(vector,(n*p*n,q))
     P = np.eye(n*p)
     P, dim = base.to_vector(P)
-    P = base.to_matrix(P,((p,n*n*p)))
+    P = base.to_matrix(P,(p,n*n*p))
     out = P@vector
     zero = np.zeros((1,q))
     out = np.vstack((zero,out))
     out, dims = base.to_vector(out)
-    return(out)
+    return out
