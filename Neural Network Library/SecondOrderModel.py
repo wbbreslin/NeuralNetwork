@@ -8,7 +8,6 @@ def forward_pass(nnet, vectors):
     thetas = [theta]
     second_derivatives = []
     n = nnet['Augmented_States'][0].shape[0]
-    print(theta)
 
     for i in range(len(nnet['Augmented_Weights'])):
         q = nnet['Augmented_Weights'][i].shape[1]
@@ -18,7 +17,6 @@ def forward_pass(nnet, vectors):
                     + nnet['First_Derivatives'][i] \
                     @ np.kron(np.eye(q), nnet['Augmented_States'][i]) \
                     @ vectors[i]
-        print(new_theta)
         thetas.append(new_theta)
         xw = nnet['Augmented_States'][i] @ nnet['Weights'][i]
         xw_vec, dims = base.to_vector(xw)
@@ -44,8 +42,6 @@ def backward_pass(nnet, vectors):
              @ omega\
              + Dv_Tensor(nnet, vectors, i) \
              + Cv_Tensor(nnet, i)
-        #print(Dv_Tensor(nnet, vectors, i))
-        #print(Cv_Tensor(nnet, i))
         new_omega = gradient @ omega + Av_Tensor(nnet, i) + Bv_Tensor(nnet, vectors, i)
         omegas.append(new_omega)
         dims = nnet['Gradients'][i].shape
