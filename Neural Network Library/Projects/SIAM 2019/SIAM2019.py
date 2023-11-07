@@ -21,21 +21,3 @@ nnet = {'Predictors': x_predictors,
         'Outcomes': y_outcomes,
         'Weights': weights,
         'Neurons': neurons}
-
-
-#nnet = train.gradient_descent(nnet,max_iterations=10**0)
-
-# Generate vectors of appropriate dimensions for testing purposes
-#vectors = nnet['Gradients'].copy()
-#for i in range(len(vectors)):
-#    vectors[i], dims = base.to_vector(vectors[i])
-#    print(vectors[i].shape)
-
-'''
-nnet = som.forward_pass(nnet,vectors)
-nnet = som.backward_pass(nnet,vectors)
-#bv = som.Bv_Tensor(nnet, vectors, 0)
-#cv = som.Cv_Tensor(nnet, 2)
-#print(cv)
-#nnet = som.backward_pass(nnet, vectors, KTensors)
-'''

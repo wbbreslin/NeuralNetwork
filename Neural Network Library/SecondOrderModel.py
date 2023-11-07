@@ -39,7 +39,7 @@ def backward_pass(nnet, vectors):
         q = nnet['Weights'][i].shape[1]
         gradient = np.kron(nnet['Augmented_Weights'][i],np.eye(n)) @ nnet['First_Derivatives'][i]
         Hv = np.kron(np.eye(q),nnet['Augmented_States'][i].T) @ nnet['First_Derivatives'][i] \
-             @ omega\
+             @ omega \
              + Dv_Tensor(nnet, vectors, i) \
              + Cv_Tensor(nnet, i)
         new_omega = gradient @ omega + Av_Tensor(nnet, i) + Bv_Tensor(nnet, vectors, i)
@@ -109,8 +109,7 @@ def Dv_Tensor(nnet, vectors, i):
 def K1v_Product(weight, n, vector):
     matrix = base.to_matrix(vector, weight.shape)
     matrix = matrix[1:,]
-    vector, dim = base.to_vector(matrix)
-    out = np.kron(vector, np.eye(n))
+    out = np.kron(matrix, np.eye(n))
     out, dim = base.to_vector(out)
     return out
 

@@ -40,28 +40,30 @@ def generate_matrix(n, dim, itr):
 
 n = 1000 #Do not go bigger...
 
-weight = np.array([[1,2,3,4],
-                   [5,6,7,8],
-                   [5,6,7,8]])
+weight = np.array([[1,4,7,10],
+                   [2,5,8,11],
+                   [3,6,9,12]])
 
 vec, dim = base.to_vector(weight)
 
-
+print(vec)
 #RUNTIME: 24.790450749977026 seconds
 start = timeit.default_timer()
 direct = Kron_Tensors(weight, n)
+print(direct.toarray())
 direct = direct @ vec
+print(direct)
 stop = timeit.default_timer()
 direct_time = stop-start
 
 start = timeit.default_timer()
-indirect = som.Kv_Product(weight,n,vec)
+indirect = som.K1v_Product(weight,n,vec)
 stop = timeit.default_timer()
 indirect_time = stop-start
-
+error = np.sum((indirect-direct)**2)
 
 print("Error between results:")
-print(np.sum(indirect-direct))
+print(error)
 print("Indirect Method Runtime:")
 print(indirect_time)
 print("Direct Method Runtime:")

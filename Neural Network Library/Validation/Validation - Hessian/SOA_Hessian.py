@@ -1,9 +1,8 @@
 import numpy as np
 import Base as base
-import FirstOrderModel as fom
 import TrainingAlgorithms as train
 import SecondOrderModel as som
-
+import csv
 
 """The data set of predictor variables"""
 x_predictors = np.array([[0.1,0.3,0.1,0.6,0.4,0.6,0.5,0.9,0.4,0.7],
@@ -38,15 +37,24 @@ nnet = {'Predictors': x_predictors,
 training_itr = 4000
 nnet = train.gradient_descent(nnet,max_iterations=training_itr)
 
-'''Define unit vectors to get full hessian'''
-'''Focusing on W0 to start'''
-n = nnet['Predictors'].shape[0]
-p = nnet['Augmented_Weights'][0].shape[0]
-q = nnet['Augmented_Weights'][0].shape[1]
-identity = np.eye((p+1)*q)
-vector = identity[:,0].reshape((p+1)*q,1)
-vectors = [vector, np.zeros((9,1)), np.zeros((8,1))]
+'''Full Hessian'''
+full_hessian = np.zeros((23,23))
 
-nnet = som.forward_pass(nnet, vectors)
-nnet = som.backward_pass(nnet, vectors)
-print(nnet['Hv_Products'][0])
+for i in range(23):
+    vector = np.zeros((23,1))
+    vector[i]=1
+    v1 = vector[0:6]
+    v2 = vector[6:15]
+    v3 = vector[15:23]
+    vectors = [v1, v2, v3]
+    nnet = som.forward_pass(nnet, vectors)
+    nnet = som.backward_pass(nnet, vectors)
+    H0, d0 = base.to_vector(nnet['Hv_Products'][0])
+    H1, d1 = base.to_vector(nnet['Hv_Products'][1])
+    H2, d2 = base.to_vector(nnet['Hv_Products'][2])
+    column = np.vstack((H0, H1, H2))
+    full_hessian[:,i] = column[:,0]
+
+#print(full_hessian)
+delta = full_hessian - full_hessian.T
+print(delta)
