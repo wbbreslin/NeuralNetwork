@@ -112,3 +112,8 @@ The second-order model adds the following keys to ```nnet```.
 ```{python}
 ['Thetas', 'Second_Derivatives', 'Omegas', 'Hv_Products']
 ```
+
+By passsing through every possible unit vector, the full Hessian matrix can be constructed. Below is a heatmap of the Hessian matrix after training for 4000 iterations.
+<p align="center">
+  <img src="https://github.com/wbbreslin/NeuralNetwork/blob/main/Images/Hessian.png" width=50% height=50%>
+</p>
