@@ -25,7 +25,14 @@ To apply these models, data should be contained in an (n x p) matrix, where the 
 The project files call the functions in the .py files mentioned above, and apply them to various data sets. Each of the project files are independent projects that I am working on as a part of my dissertation.
 
 ## Example of Training a Neural Network
-The code below comes from the ```SIAM2019.py``` file in the projects folder, which is a simple example for training a neural network. This example is a protoype, and a work in progress.
+The code below comes from the ```SIAM2019.py``` file in the projects folder, which is a simple example for training a neural network.
+
+First, we import the necessary modules.
+```{python}
+import numpy as np
+import Base as base
+import TrainingAlgorithms as train
+```
 
 The dataset:
 
@@ -40,14 +47,6 @@ y_outcomes = np.array([[1,1,1,1,1,0,0,0,0,0],
 ```
 The X data is 2-dimensional, representing a point in space, and the Y data is a binary outcome for each of the X values (a success or failure).
 
-First, we import the necessary modules.
-```{python}
-import numpy as np
-import Base as base
-import FirstOrderModel as fom
-import TrainingAlgorithms as train
-```
-
 Then, we need to define the network structure, which we can do using the ```create_network(neurons)``` function from Base.py. We also define a list of the activation function types for the network. The ```augment_network(weights, biases)``` combines the bias terms into the weight matrix.
 
 ```{python}
@@ -56,14 +55,14 @@ activations = ["sigmoid","sigmoid","sigmoid","sigmoid"]
 weights, biases = base.create_network(neurons)
 augmented_weights, constants = base.augment_network(weights, biases)
 ```
-We create a neural network object as a dictionary.
+Create a neural network object as a dictionary.
 ```{python}
 nnet = {'Predictors': x_predictors,
         'Outcomes': y_outcomes,
         'Weights': weights,
         'Neurons': neurons}
 ```
-Now we train the network by calling the optimization algorithms from ```TrainingAlgorithms.py```.
+Now train the network by calling the optimization algorithms from ```TrainingAlgorithms.py```.
 ```{python}
 """Train the neural network"""
 nnet = train.gradient_descent(nnet,max_iterations=10**4)
@@ -90,7 +89,13 @@ Here is a visualization of the trained NN.
 ## Calculating Hessian-Vector Products
 To calculate the Hessian-Vector product, we do a forward and backward pass through the first-order model, then do another forward and backward pass using the second-order model. For many applications, we start with an already trained neural network, and do another forward and backward pass in the second-order model.
 
-First create some vectors to use for the Hessian-vector products. For simplicity, here we just use the gradients. These start as matrices, so these need to be converted to vectors.
+First, import the second-order model. 
+```{python}
+import SecondOrderModel as som
+```
+If you haven't already trained the network, you will either need to train it first, or import the first-order model, and run that before the second-order model can be ran.
+
+Then create some vectors to use for the Hessian-vector products. For simplicity, here we just use the gradients. These start as matrices, so these need to be converted to vectors.
 
 ```{python}
 vectors = nnet['Gradients'].copy()
@@ -98,13 +103,6 @@ for i in range(len(vectors)):
     vectors[i], dims = base.to_vector(vectors[i])
 ```
 
-The second-order model also requires the following constant tensors
-```{python}
-KTensors = []
-for i in range(len(nnet['Weights'])):
-    KT = som.Kron_Tensors(nnet['Weights'][i],10)
-    KTensors.append(KT)
-```
 With the chosen vectors, we can now do the forward and backward passes in the second-order model.
 ```{python}
 nnet = som.forward_pass(nnet,vectors)
