@@ -2,7 +2,6 @@ import numpy as np
 import Base as base
 import TrainingAlgorithms as train
 import SecondOrderModel as som
-import csv
 
 """The data set of predictor variables"""
 x_predictors = np.array([[0.1,0.3,0.1,0.6,0.4,0.6,0.5,0.9,0.4,0.7],

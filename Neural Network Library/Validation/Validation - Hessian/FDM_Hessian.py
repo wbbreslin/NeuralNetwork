@@ -3,7 +3,6 @@ import Base as base
 import FirstOrderModel as fom
 import TrainingAlgorithms as train
 import copy
-import csv
 
 """The data set of predictor variables"""
 x_predictors = np.array([[0.1,0.3,0.1,0.6,0.4,0.6,0.5,0.9,0.4,0.7],
@@ -83,16 +82,3 @@ full_hessian = np.bmat([[H[0], H[1], H[2]],
                        [H[6], H[7], H[8]]])
 
 print(full_hessian - full_hessian.T)
-
-# Specify the CSV file name
-csv_file = 'hessian.csv'
-
-full_hessian = np.array(full_hessian)
-
-# Open the CSV file for writing
-with open(csv_file, 'w', newline='') as file:
-    writer = csv.writer(file)
-
-    # Write each row (list) of the matrix to the CSV file
-    for row in full_hessian:
-        writer.writerow(row)

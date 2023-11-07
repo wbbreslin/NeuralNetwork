@@ -25,7 +25,7 @@ nnet = {'Predictors': x_predictors,
         'Weights': weights,
         'Neurons': neurons}
 
-nnet = train.gradient_descent(nnet,max_iterations=1)
+nnet = train.gradient_descent(nnet,max_iterations=4000)
 def ordered_pair_matrix(start, end, step):
     x = np.arange(start, end + step, step)
     y = np.arange(start, end + step, step)

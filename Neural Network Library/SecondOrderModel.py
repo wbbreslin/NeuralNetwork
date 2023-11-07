@@ -48,7 +48,6 @@ def backward_pass(nnet, vectors):
         Hv = base.to_matrix(Hv, dims)
         Hv_Products.append(Hv)
         omega = new_omega
-        #gradfx omega + Bv + A*theta
 
     omegas.reverse()
     Hv_Products.reverse()

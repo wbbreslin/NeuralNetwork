@@ -49,7 +49,7 @@ def FDM_Hessian(nnet, epsilon):
     full_hessian = np.bmat([[H[0], H[1], H[2]],
                             [H[3], H[4], H[5]],
                             [H[6], H[7], H[8]]])
-    return(full_hessian)
+    return full_hessian
 
 
 """The data set of predictor variables"""
