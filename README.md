@@ -106,7 +106,7 @@ for i in range(len(vectors)):
 With the chosen vectors, we can now do the forward and backward passes in the second-order model.
 ```{python}
 nnet = som.forward_pass(nnet,vectors)
-nnet = som.backward_pass(nnet, vectors, KTensors)
+nnet = som.backward_pass(nnet, vectors)
 ```
 The second-order model adds the following keys to ```nnet```.
 ```{python}
