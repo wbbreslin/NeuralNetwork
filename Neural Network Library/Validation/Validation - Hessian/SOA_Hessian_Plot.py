@@ -16,3 +16,4 @@ plt.xlabel('Weight Parameter ID (23 parameters)')
 plt.ylabel('Weight Parameter ID (23 parameters)')
 plt.title('Hessian Matrix: ' + str(data.training_itr) + ' Iterations')
 plt.show()
+

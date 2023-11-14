@@ -3,8 +3,8 @@ import Base as base
 
 
 def forward_pass(nnet, vectors):
-    theta = np.zeros(nnet['Predictors'].shape)
-    theta, dim = base.to_vector(theta)
+    theta = np.zeros(nnet['Pass Forward'].shape)
+    theta = base.to_vector(theta)
     thetas = [theta]
     second_derivatives = []
     n = nnet['Augmented_States'][0].shape[0]
@@ -19,7 +19,7 @@ def forward_pass(nnet, vectors):
                     @ vectors[i]
         thetas.append(new_theta)
         xw = nnet['Augmented_States'][i] @ nnet['Weights'][i]
-        xw_vec, dims = base.to_vector(xw)
+        xw_vec = base.to_vector(xw)
         d2 = np.diagflat(base.sigmoid_second_derivative(xw_vec))
         second_derivatives.append(d2)
 
@@ -109,7 +109,7 @@ def K1v_Product(weight, n, vector):
     matrix = base.to_matrix(vector, weight.shape)
     matrix = matrix[1:,]
     out = np.kron(matrix, np.eye(n))
-    out, dim = base.to_vector(out)
+    out = base.to_vector(out)
     return out
 
 def K2v_Product(weight, n, vector):
@@ -117,10 +117,10 @@ def K2v_Product(weight, n, vector):
     q = weight.shape[1]
     vector = base.to_matrix(vector,(n*p*n,q))
     P = np.eye(n*p)
-    P, dim = base.to_vector(P)
+    P = base.to_vector(P)
     P = base.to_matrix(P,(p,n*n*p))
     out = P@vector
     zero = np.zeros((1,q))
     out = np.vstack((zero,out))
-    out, dims = base.to_vector(out)
+    out = base.to_vector(out)
     return out

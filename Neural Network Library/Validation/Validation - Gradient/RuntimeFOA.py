@@ -1,5 +1,5 @@
 import numpy as np
-#import FirstOrderModel as fom
+import FirstOrderModel as fom
 import TrainingAlgorithms as train
 import timeit
 
@@ -40,11 +40,12 @@ nnet = {'Predictors': x_predictors,
         'Neurons': neurons}
 
 start = timeit.default_timer()
-nnet = train.gradient_descent(nnet, max_iterations=1)
+
+for i in range(4000):
+    nnet = fom.forward_pass(nnet)
+    nnet = fom.backward_pass(nnet)
 
 stop = timeit.default_timer()
 time = stop-start
 
 print(time)
-print(nnet['Gradients'][0])
-

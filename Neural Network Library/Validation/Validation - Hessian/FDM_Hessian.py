@@ -66,7 +66,7 @@ for u in range(len(nnet['Weights'])):
                 nnet_plus = fom.backward_pass(nnet_plus)
 
                 delta = (nnet_plus['Gradients'][u] - nnet_minus['Gradients'][u]) / (2 * epsilon)
-                Hessian_column, dim = base.to_vector(delta)
+                Hessian_column = base.to_vector(delta)
                 Hessian[:,iterate] = Hessian_column[:,0]
                 iterate = iterate + 1
 

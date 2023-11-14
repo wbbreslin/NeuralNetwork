@@ -1,6 +1,5 @@
 import numpy as np
-#import scipy as sp
-#need to use scipy sparse.diags(vector) to save memory on Sigma''
+
 def augment_predictor(x_predictors):
     dimensions = x_predictors.shape
     A1 = np.zeros((dimensions[1],1))
@@ -35,14 +34,8 @@ def augment_network(weights, biases):
         augmented_weights.append(augment)
     return augmented_weights
 
-def communication_matrix(m, n):
-    # determine permutation applied by K
-    w = np.arange(m * n).reshape((m, n), order="F").T.ravel(order="F")
 
-    # apply this permutation to the rows (i.e. to each column) of identity matrix and return result
-    return np.eye(m * n)[w, :]
-
-def create_network(neurons):
+def create_network(x, y, neurons, activations):
     """
     Description
     --------------------
@@ -67,7 +60,16 @@ def create_network(neurons):
         bias = np.random.rand(next_layer, 1)*0.5
         weights.append(weight)
         biases.append(bias)
-    return weights, biases
+
+    weights = augment_network(weights, biases)
+    nnet = {'Predictors': x,
+            'Pass Forward': x.copy(),
+            'Outcomes': y,
+            'Outcomes_Subset': y.copy(),
+            'Weights': weights,
+            'Neurons': neurons,
+            'Activations': activations}
+    return nnet
 
 def matrix_norm(matrix):
     """
@@ -215,5 +217,5 @@ def to_vector(matrix):
     vector_dimensions = np.prod(matrix_dimensions)
     vector = matrix.reshape((vector_dimensions,1), order="F")
 
-    return vector, matrix_dimensions
+    return vector
 

@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 import TrainingAlgorithms as train
+import Base as base
+
 def new_column(input_tensor):
     num_rows = input_tensor.size(0)
     ones_column = torch.ones(num_rows, 1)
@@ -64,13 +66,11 @@ w1 = w1.detach().numpy()
 w2 = w2.detach().numpy()
 
 weights = [w0,w1,w2]
-neurons = np.array([2,2,3,2])
-activations = ["sigmoid","sigmoid","sigmoid","sigmoid"]
-
-nnet = {'Predictors': x_predictors,
-        'Outcomes': y_outcomes,
-        'Weights': weights,
-        'Neurons': neurons}
+nnet = base.create_network(x_predictors,
+                           y_outcomes,
+                           neurons = [2,2,3,2],
+                           activations = ["sigmoid","sigmoid","sigmoid","sigmoid"])
+nnet['Weights']=weights
 
 nnet = train.gradient_descent(nnet,max_iterations=1)
 

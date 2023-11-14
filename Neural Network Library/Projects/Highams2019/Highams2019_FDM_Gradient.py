@@ -1,15 +1,10 @@
+import Highams2019 as data
 import numpy as np
 import FirstOrderModel as fom
 import copy
-import Base as base
 
-"""The data set of predictor variables"""
-x_predictors = np.array([[0.1,0.3,0.1,0.6,0.4,0.6,0.5,0.9,0.4,0.7],
-                        [0.1,0.4,0.5,0.9,0.2,0.3,0.6,0.2,0.4,0.6]]).T
-
-"""The data set of outcome variables"""
-y_outcomes = np.array([[1,1,1,1,1,0,0,0,0,0],
-                      [0,0,0,0,0,1,1,1,1,1]]).T
+'''Import the neural network and the data set'''
+nnet = data.nnet
 
 '''Define the initial weights'''
 w0 = np.array([[0.1, 0.2],
@@ -25,14 +20,8 @@ w2 = np.array([[1.6, 1.7],
                [2.0, 2.1],
                [2.2, 2.3]])
 
+'''Use these custom weights to initialize the network'''
 weights = [w0, w1, w2]
-
-'''Create a neural network object'''
-nnet = base.create_network(x_predictors,
-                           y_outcomes,
-                           neurons = [2,2,3,2],
-                           activations = ["sigmoid","sigmoid","sigmoid","sigmoid"])
-
 nnet['Weights']=weights
 
 '''Define the function we are differentiating'''
@@ -77,8 +66,8 @@ for w in range(len(nnet['Weights'])):
             y_minus = nnet_minus['States'][-1]
 
             # Compute cost for plus and minus weights
-            cost_minus = cost(y_minus, y_outcomes)
-            cost_plus = cost(y_plus, y_outcomes)
+            cost_minus = cost(y_minus, data.y_outcomes)
+            cost_plus = cost(y_plus, data.y_outcomes)
 
             # Compute the gradient using finite differences
             delta = (cost_plus - cost_minus) / (2 * epsilon)

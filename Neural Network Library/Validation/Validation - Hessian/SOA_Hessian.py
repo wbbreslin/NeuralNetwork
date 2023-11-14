@@ -27,10 +27,12 @@ w2 = np.array([[1.6, 1.7],
 
 weights = [w0, w1, w2]
 
+nnet = base.create_network(x_predictors,
+                           y_outcomes,
+                           neurons = [2,2,3,2],
+                           activations = ["sigmoid","sigmoid","sigmoid","sigmoid"])
 '''Create a neural network object'''
-nnet = {'Predictors': x_predictors,
-        'Outcomes': y_outcomes,
-        'Weights': weights}
+nnet['Weights'] = weights
 
 '''Exact gradient calculation'''
 training_itr = 4000
@@ -48,12 +50,13 @@ for i in range(23):
     vectors = [v1, v2, v3]
     nnet = som.forward_pass(nnet, vectors)
     nnet = som.backward_pass(nnet, vectors)
-    H0, d0 = base.to_vector(nnet['Hv_Products'][0])
-    H1, d1 = base.to_vector(nnet['Hv_Products'][1])
-    H2, d2 = base.to_vector(nnet['Hv_Products'][2])
+    H0 = base.to_vector(nnet['Hv_Products'][0])
+    H1 = base.to_vector(nnet['Hv_Products'][1])
+    H2 = base.to_vector(nnet['Hv_Products'][2])
     column = np.vstack((H0, H1, H2))
     full_hessian[:,i] = column[:,0]
 
 #print(full_hessian)
-delta = full_hessian - full_hessian.T
-print(delta)
+#delta = full_hessian - full_hessian.T
+#cn = np.linalg.cond(full_hessian)
+#print(cn)

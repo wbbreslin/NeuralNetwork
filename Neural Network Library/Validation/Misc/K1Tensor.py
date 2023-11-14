@@ -44,7 +44,7 @@ weight = np.array([[1,4,7,10],
                    [2,5,8,11],
                    [3,6,9,12]])
 
-vec, dim = base.to_vector(weight)
+vec = base.to_vector(weight)
 
 print(vec)
 #RUNTIME: 24.790450749977026 seconds

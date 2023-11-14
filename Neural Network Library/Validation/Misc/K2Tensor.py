@@ -55,12 +55,12 @@ def K2v_Product(weight, n, vector):
     q = weight.shape[1]
     vector = base.to_matrix(vector,(n*p*n,q))
     P = np.eye(n*p)
-    P, dim = base.to_vector(P)
+    P = base.to_vector(P)
     P = base.to_matrix(P,((p,n*n*p)))
-    out = P@vector
+    out = P @ vector
     zero = np.zeros((1,q))
     out = np.vstack((zero,out))
-    out, dims = base.to_vector(out)
+    out = base.to_vector(out)
     return(out)
 
 n = 1000 #Do not go bigger runtime for old method is p*n**3
@@ -69,7 +69,7 @@ weight = np.array([[1,2,3,4],
                    [5,6,7,4],
                    [5,6,7,4]])
 
-vec, dim = base.to_vector(weight)
+vec = base.to_vector(weight)
 
 
 #RUNTIME: 24.790450749977026 seconds for n=1000

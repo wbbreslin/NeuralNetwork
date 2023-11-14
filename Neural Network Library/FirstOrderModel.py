@@ -2,56 +2,24 @@ import numpy as np
 import Base as base
 
 def first_order_model(nnet):
-    """
-    Description
-    --------------------
-    This is a wrapper function combining the forward pass and backward passes into one function.
-
-    Inputs
-    --------------------
-    x_predictors        : A matrix (n x p) containing n data points in p variables
-    y_outcomes          : A matrix (n x q) containing n data points in q variables
-    weights             : List of the weight parameter matrices for the NN
-
-    Outputs
-    --------------------
-    states              : List of states (x) at each layer of the NN
-    gradients           : List of gradients for each weight matrix
-    Lambdas             : List of adjoint variable states at each layer of the NN
-    """
     nnet = forward_pass(nnet)
+    nnet = track_cost(nnet)
     nnet = backward_pass(nnet)
-
     return nnet
 
 def forward_pass(nnet):
-    """
-    Description
-    --------------------
-    Neural Network model dynamics (Forward Pass)
-
-    Inputs
-    --------------------
-    x_predictors        : A matrix (n x p) containing n data points in p variables
-    weights             : List of the weight parameter matrices for the NN
-
-    Outputs
-    --------------------
-    states              : List of states (x) at each layer of the NN
-    first_derivatives   : List of Sigmoid first derivative matrices for each NN layer
-    """
-    states = [nnet['Predictors']]
+    states = [nnet['Pass Forward']]
     augmented_states = []
     augmented_weights = []
     first_derivatives = []
-    x_predictors = nnet['Predictors']
+    x_predictors = nnet['Pass Forward']
     weights = nnet['Weights']
     for i in range(len(nnet['Weights'])):
         z, A, B = base.augment_predictor(x_predictors)
         augmented_states.append(z)
         xw = z @ weights[i]
         x_predictors = base.sigmoid(xw)
-        xw_vec, dims = base.to_vector(xw)
+        xw_vec = base.to_vector(xw)
         d1 = np.diagflat(base.sigmoid_derivative(xw_vec))
         first_derivatives.append(d1)
         states.append(x_predictors)
@@ -67,34 +35,28 @@ def forward_pass(nnet):
 
     return nnet
 
+def track_cost(nnet):
+    y_predictions = nnet['States'][-1]
+    y_outcomes = nnet['Outcomes_Subset']
+    cost = base.mean_squared_error(y_predictions, y_outcomes)
+    if 'Cost' in nnet:
+        nnet['Cost'].append(cost)
+    else:
+        output = {'Cost': [cost]}
+        nnet.update(output)
+
+    return(nnet)
+
 def backward_pass(nnet):
-    """
-    Description
-    --------------------
-    First-order adjoint model (Backward Pass)
-
-    Inputs
-    --------------------
-    states              : List of states (x) at each layer of the NN
-    y_outcomes          : A matrix (n x q) containing n data points in q variables
-    first_derivatives   : List of Sigmoid first derivative matrices for each NN layer
-    weights             : List of the weight parameter matrices for the NN
-
-
-    Outputs
-    --------------------
-    Lambdas             : List of adjoint variable states at each layer of the NN
-    gradients           : List of gradients for each weight matrix
-    """
     states = nnet['States']
     terminal_state = states[-1]
-    y_outcomes = nnet['Outcomes']
+    y_outcomes = nnet['Outcomes_Subset']
     first_derivatives = nnet['First_Derivatives']
     weights = nnet['Weights']
 
     n = terminal_state.shape[0]
-    Lambda, dims = base.to_vector(terminal_state - y_outcomes)
-    p = dims[1]
+    Lambda = base.to_vector(terminal_state - y_outcomes)
+    p = terminal_state.shape[1]
     Lambdas = [Lambda]
     gradients = []
     dimensions = [p]

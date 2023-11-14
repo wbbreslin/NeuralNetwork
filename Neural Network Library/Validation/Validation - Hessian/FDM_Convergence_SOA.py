@@ -35,7 +35,7 @@ def FDM_Hessian(nnet, epsilon):
                     nnet_plus = fom.backward_pass(nnet_plus)
 
                     delta = (nnet_plus['Gradients'][u] - nnet_minus['Gradients'][u]) / (2 * epsilon)
-                    Hessian_column, dim = base.to_vector(delta)
+                    Hessian_column = base.to_vector(delta)
                     Hessian[:, iterate] = Hessian_column[:, 0]
                     iterate = iterate + 1
 
@@ -98,25 +98,25 @@ for i in range(23):
     vectors = [v1, v2, v3]
     nnet = som.forward_pass(nnet, vectors)
     nnet = som.backward_pass(nnet, vectors)
-    H0, d0 = base.to_vector(nnet['Hv_Products'][0])
-    H1, d1 = base.to_vector(nnet['Hv_Products'][1])
-    H2, d2 = base.to_vector(nnet['Hv_Products'][2])
+    H0 = base.to_vector(nnet['Hv_Products'][0])
+    H1 = base.to_vector(nnet['Hv_Products'][1])
+    H2 = base.to_vector(nnet['Hv_Products'][2])
     column = np.vstack((H0, H1, H2))
     exact_hessian[:,i] = column[:,0]
 
-approx_hessian = FDM_Hessian(nnet, 10**-6)
+approx_hessian = FDM_Hessian(nnet, 0.1)
 
-w = np.ones((23,1))
-#numerator = w.T @ approx_hessian @ w
-#denominator = w.T @ exact_hessian @ w
-#print(numerator/denominator)
+H1 = FDM_Hessian(nnet, 0.001)
+H2 = FDM_Hessian(nnet, 0.0001)
+dif = H2-H1
+mat = dif
 
 """Plot the Difference"""
 delta = exact_hessian - approx_hessian
-min = np.abs(np.min(delta))
-max = np.abs(np.max(delta))
+min = np.abs(np.min(mat))
+max = np.abs(np.max(mat))
 bound = np.max((min, max))
-plt.imshow(delta, cmap='seismic', vmin=-bound, vmax=bound)
+plt.imshow(mat, cmap='seismic', vmin=-bound, vmax=bound)
 plt.colorbar()
 plt.xlabel('Weight Parameter ID (23 parameters)')
 plt.ylabel('Weight Parameter ID (23 parameters)')

@@ -36,26 +36,27 @@ y_target = torch.tensor(y_outcomes, dtype=torch.float64)
 
 start = timeit.default_timer()
 
-z0 = new_column(x0)
-x1 = torch.mm(z0, w0)
-x1 = torch.sigmoid(x1)
+for i in range(4000):
+    z0 = new_column(x0)
+    x1 = torch.mm(z0, w0)
+    x1 = torch.sigmoid(x1)
 
-z1 = new_column(x1)
-x2 = torch.mm(z1, w1)
-x2 = torch.sigmoid(x2)
+    z1 = new_column(x1)
+    x2 = torch.mm(z1, w1)
+    x2 = torch.sigmoid(x2)
 
-z2 = new_column(x2)
-x3 = torch.mm(z2, w2)
-x3 = torch.sigmoid(x3)
+    z2 = new_column(x2)
+    x3 = torch.mm(z2, w2)
+    x3 = torch.sigmoid(x3)
 
-# Define a loss function (e.g., mean squared error)
-criterion = CustomLoss()
+    # Define a loss function (e.g., mean squared error)
+    criterion = CustomLoss()
 
-# Calculate the loss
-loss = criterion(x3, y_target)
+    # Calculate the loss
+    loss = criterion(x3, y_target)
 
-# Compute gradients
-loss.backward()
+    # Compute gradients
+    loss.backward()
 
 stop = timeit.default_timer()
 

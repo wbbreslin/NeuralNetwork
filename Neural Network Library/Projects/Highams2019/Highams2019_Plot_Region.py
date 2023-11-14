@@ -1,31 +1,10 @@
+import Highams2019_Gradient_Descent as data
 import numpy as np
-import Base as base
-import TrainingAlgorithms as train
 import FirstOrderModel as fom
 import matplotlib.pyplot as plt
 from scipy.spatial import ConvexHull
 from matplotlib.patches import Polygon
 
-# Define your data
-x_predictors = np.array([[0.1, 0.3, 0.1, 0.6, 0.4, 0.6, 0.5, 0.9, 0.4, 0.7],
-                        [0.1, 0.4, 0.5, 0.9, 0.2, 0.3, 0.6, 0.2, 0.4, 0.6]]).T
-
-y_outcomes = np.array([[1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
-                      [0, 0, 0, 0, 0, 1, 1, 1, 1, 1]]).T
-
-"""Define the neural network structure"""
-np.random.seed(100)
-neurons = np.array([2,2,3,2])
-activations = ["sigmoid","sigmoid","sigmoid","sigmoid"]
-weights, biases = base.create_network(neurons)
-weights = base.augment_network(weights, biases)
-
-nnet = {'Predictors': x_predictors,
-        'Outcomes': y_outcomes,
-        'Weights': weights,
-        'Neurons': neurons}
-
-nnet = train.gradient_descent(nnet,max_iterations=4000)
 def ordered_pair_matrix(start, end, step):
     x = np.arange(start, end + step, step)
     y = np.arange(start, end + step, step)
@@ -33,9 +12,9 @@ def ordered_pair_matrix(start, end, step):
     matrix = np.column_stack((xx.ravel(), yy.ravel()))
     return matrix
 
-
+nnet = data.nnet
 x = ordered_pair_matrix(0,1,0.01) # do not make any bigger...
-nnet['Predictors'] = x
+nnet['Pass Forward'] = x
 y = fom.forward_pass(nnet)
 y = np.round(nnet['States'][-1])
 
@@ -55,22 +34,17 @@ hull = ConvexHull(x_y1)
 polygon = Polygon(x_y1[hull.vertices], closed=True, facecolor='palegreen', alpha=0.3)
 plt.gca().add_patch(polygon)
 
-x1 = x_predictors[y_outcomes[:, 0] == 1]
-x2 = x_predictors[y_outcomes[:, 1] == 1]
+x1 = nnet['Predictors'][nnet['Outcomes'][:, 0] == 1]
+x2 = nnet['Predictors'][nnet['Outcomes'][:, 1] == 1]
 
 plt.scatter(x1[:, 0], x1[:, 1], label='Failure', marker='x', s=75, color = 'black')
 plt.scatter(x2[:, 0], x2[:, 1], color = 'black', label='Success', marker='o', s=75)
 
-#plt.xlim(0, 1)  # Replace x_min and x_max with your desired values
-#plt.ylim(0, 1)
-
 plt.xlabel('X1 - Axis')
 plt.ylabel('X2 - Axis')
-plt.title('Neural Network Predictions (Iterations: None)')
+plt.title('Example Data Set')
+plt.xlim(0,1)
+plt.ylim(0,1)
 plt.legend(loc=2)
 plt.grid(True)
 plt.show()
-
-
-print(np.sum(y))
-print(y.shape)
