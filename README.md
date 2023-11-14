@@ -5,8 +5,6 @@ This repository contains code for training Neural Networks, and evaluating Hessi
   <img src="https://github.com/wbbreslin/NeuralNetwork/blob/main/Images/NNet1.png">
 </p>
 
-## Disclaimer
-This project is a work in progress. Some functionality is currently missing, and will be added at a later date.
 
 ## How to Use
 Download the .py files in the Neural Network Library folder. There are four files:
