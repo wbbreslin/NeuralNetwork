@@ -45,7 +45,7 @@ def track_cost(nnet):
         output = {'Cost': [cost]}
         nnet.update(output)
 
-    return(nnet)
+    return nnet
 
 def backward_pass(nnet):
     states = nnet['States']

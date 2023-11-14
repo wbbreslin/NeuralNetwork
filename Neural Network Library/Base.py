@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 
 def augment_predictor(x_predictors):
     dimensions = x_predictors.shape
@@ -70,6 +71,16 @@ def create_network(x, y, neurons, activations):
             'Neurons': neurons,
             'Activations': activations}
     return nnet
+
+def store_nnet(nnet, path='output.pkl'):
+    with open(path, 'wb') as pickle_file:
+        pickle.dump({'nnet': nnet}, pickle_file)
+
+def load_nnet(path='output.pkl'):
+    with open(path, 'rb') as pickle_file:
+        loaded_data = pickle.load(pickle_file)
+    nnet = loaded_data['nnet']
+    return(nnet)
 
 def matrix_norm(matrix):
     """

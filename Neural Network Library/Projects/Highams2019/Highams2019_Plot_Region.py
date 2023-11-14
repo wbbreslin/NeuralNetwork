@@ -1,4 +1,4 @@
-import Highams2019_Gradient_Descent as data
+import Highams2019_Train_GradientDescent as data
 import numpy as np
 import FirstOrderModel as fom
 import matplotlib.pyplot as plt
