@@ -24,5 +24,5 @@ nnet = base.create_network(x_predictors,
                            activations = ["ReLU","Softmax"])
 
 # runtime for 10**4 iterations is 902 seconds, about 15 minutes
-nnet = train.gradient_descent(nnet, max_iterations=10**4)
+nnet = train.gradient_descent(nnet, step_size=1, max_iterations=10**4)
 base.store_nnet(nnet)

@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.linalg
 import pickle
 
 def augment_predictor(x_predictors):
@@ -13,45 +14,15 @@ def augment_predictor(x_predictors):
     return Z, A, B
 
 def augment_network(weights, biases):
-    """
-    Description
-    --------------------
-    Combines bias vectors into weight matrices
-
-    Inputs
-    --------------------
-    weights             : List of weight matrices
-    biases              : List of bias vectors
-
-    Outputs
-    --------------------
-    augmented_weights   : List of weight matrices with bias term absorbed into the matrix
-    constants           : List of constants modifiers to account for bias absorption
-    """
-
+    """Combines bias vectors into weight matrices"""
     augmented_weights = []
     for i in range(len(weights)):
         augment = np.vstack((biases[i].T,weights[i]))
         augmented_weights.append(augment)
     return augmented_weights
 
-
 def create_network(x, y, neurons, activations):
-    """
-    Description
-    --------------------
-    Initiates NN parameters given a list of neurons per layer
-
-    Inputs
-    --------------------
-    neurons             : List of the number of neurons per layer e.g. [2,2,3,2]
-
-    Outputs
-    --------------------
-    weights             : List of random weight matrices
-    biases              : List of random bias vectors
-    """
-
+    """Creates the neural network dictionary"""
     weights = []; biases = []
     layers = len(neurons)
     for i in range(layers-1):
@@ -72,161 +43,85 @@ def create_network(x, y, neurons, activations):
             'Activations': activations}
     return nnet
 
-def store_nnet(nnet, path='output.pkl'):
-    with open(path, 'wb') as pickle_file:
-        pickle.dump({'nnet': nnet}, pickle_file)
-
 def load_nnet(path='output.pkl'):
+    """Loads a neural network dictionary from a pickle file"""
     with open(path, 'rb') as pickle_file:
         loaded_data = pickle.load(pickle_file)
     nnet = loaded_data['nnet']
-    return(nnet)
+    return nnet
 
 def matrix_norm(matrix):
-    """
-    Description
-    --------------------
-    Computes the matrix norm Trace(A'A)
-
-    Inputs
-    --------------------
-    matrix              : Any matrix (m x n)
-
-    Outputs
-    --------------------
-    norm                : A scalar value, the matrix norm
-    """
-    norm = np.trace(matrix.T @ matrix)
-    return norm
+    """Computes the matrix norm Trace(A'A)"""
+    return np.trace(matrix.T @ matrix)
 
 def mean_squared_error(y_predictions,y_outcomes):
-    """
-    Description
-    --------------------
-    Computes the mean-squared error for a given set of predictions
-
-    Inputs
-    --------------------
-    y_predictions       : A matrix (n x q) containing n data points in q variables
-    y_outcomes          : A matrix (n x q) containing n data points in q variables
-
-    Outputs
-    --------------------
-    MSE                 : A scalar value, mean-squared error
-    """
-
     n = y_outcomes.shape[0]
     residuals = y_predictions-y_outcomes
     SSE = matrix_norm(residuals)
     MSE = SSE/n
     return MSE
 
+def permutation_matrix(m, n):
+    """Commutation Matrix: K vec(A) = vec(A.T)"""
+    w = np.arange(m * n).reshape((m, n), order="F").T.ravel(order="F")
+    return np.eye(m * n)[w, :]
+
+def relu(x):
+    return np.maximum(0, x)
+
+def relu_derivative(x):
+    return 1 if relu(x) > 0 else 0
+
 def sigmoid(x):
-    """
-    Description
-    --------------------
-    Computes the sigmoid function component-wise
-
-    Inputs
-    --------------------
-    x                   : A scalar, vector, or matrix
-
-    Outputs
-    --------------------
-    y                   : Sigmoid of x
-    """
     y = 1/(1+np.exp(-x))
     return y
 
 def sigmoid_derivative(x):
-    """
-    Description
-    --------------------
-    Computes the sigmoid function component-wise
-    NEED TO GENERALIZE THIS FUNCTION, ONLY WORKS FOR VECTOR & MATRIX INPUTS
-
-    Inputs
-    --------------------
-    x                   : A scalar, vector, or matrix
-
-    Outputs
-    --------------------
-    y                   : Sigmoid derivative of x
-
-    Notes
-    --------------------
-    If x is a scalar, y will be a vector
-    If x is a vector, y will be a matrix
-    If x is a matrix, y will be a tensor (a higher-dimensional matrix)
-    """
-    #x, dims = to_vector(x)
-    #y = np.diagflat(sigmoid(x)*(1-sigmoid(x)))
-    y = sigmoid(x) * (1 - sigmoid(x))
-    return y
+    return sigmoid(x) * (1 - sigmoid(x))
 
 def sigmoid_second_derivative(x):
-    """
-    Description
-    --------------------
-    Computes the sigmoid function component-wise
-    NEED TO FIX THIS FUNCTION
+    return sigmoid(x)*(1-sigmoid(x))*(1-2*sigmoid(x))
 
-    Inputs
-    --------------------
-    x                   : A scalar, vector, or matrix
+def softmax(x):
+    x = x - np.max(x)
+    row_sum = np.sum(np.exp(x))
+    return np.array([np.exp(x_i) / row_sum for x_i in x])
 
-    Outputs
-    --------------------
-    y                   : Sigmoid derivative of x
+def softmax_batch(x):
+    """This is the primary function for softmax"""
+    row_maxes = np.max(x, axis=1)
+    row_maxes = row_maxes[:, np.newaxis]  # for broadcasting
+    x = x - row_maxes
+    return np.array([softmax(row) for row in x])
 
-    Notes
-    --------------------
-    If x is a scalar, y will be a matrix
-    If x is a vector, y will be a matrix
-    If x is a matrix, y will be a tensor (a higher-dimensional matrix)
-    """
-    y = sigmoid(x)*(1-sigmoid(x))*(1-2*sigmoid(x))
-    return y
+def softmax_derivative(x):
+    """This is the primary function for softmax derivatives"""
+    n = x.shape[0]
+    p = x.shape[1]
+    blocks = softmax_batch_jacobian(x)
+    J = scipy.linalg.block_diag(*blocks)
+    Q = permutation_matrix(p,n)
+    return Q @ J @ Q.T
+
+def softmax_jacobian(s):
+    return np.diag(s) - np.outer(s, s)
+
+def softmax_batch_jacobian(x):
+    return np.array([softmax_jacobian(row) for row in x])
+
+def store_nnet(nnet, path='output.pkl'):
+    """Saves neural network dictionary to a pickle file"""
+    with open(path, 'wb') as pickle_file:
+        pickle.dump({'nnet': nnet}, pickle_file)
 
 def to_matrix(vector, matrix_dimension):
-    """
-    Description
-    --------------------
-    Converts a vector to a matrix with the given dimensions
-
-    Inputs
-    --------------------
-    vector              : An (nm x 1) vector
-    matrix_dimensions   : The original matrix dimensions (n x m)
-
-    Outputs
-    --------------------
-    matrix              : An (n x m) matrix
-    """
-
+    """Converts a vector to a matrix with given dimensions"""
     matrix = vector.reshape(matrix_dimension, order="F")
     return matrix
 
-
 def to_vector(matrix):
-    """
-    Description
-    --------------------
-    Converts a matrix to a vector, storing original dimensions
-
-    Inputs
-    --------------------
-    matrix              : An (n x m) matrix
-
-    Outputs
-    --------------------
-    vector              : An (nm x 1) vector
-    matrix_dimensions   : The original matrix dimensions (n x m)
-    """
-
+    """Converts matrix to a vector by stacking columns"""
     matrix_dimensions = matrix.shape
     vector_dimensions = np.prod(matrix_dimensions)
     vector = matrix.reshape((vector_dimensions,1), order="F")
-
     return vector
-
