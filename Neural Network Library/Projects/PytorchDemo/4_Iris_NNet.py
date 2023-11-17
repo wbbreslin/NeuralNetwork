@@ -61,9 +61,9 @@ with torch.no_grad():
         indices = (predicted_classes == i).nonzero().squeeze()
         ax.scatter(X_tensor[indices, 0], X_tensor[indices, 1], X_tensor[indices, 2], label=f'Class {i}')
 
-    ax.set_xlabel('Feature 1')
-    ax.set_ylabel('Feature 2')
-    ax.set_zlabel('Feature 3')
+    ax.set_xlabel('Sepal Length')
+    ax.set_ylabel('Sepal Width')
+    ax.set_zlabel('Petal Length')
     ax.set_title('3D Scatter Plot of Iris Dataset by Predicted Classes')
     ax.legend()
     plt.show()

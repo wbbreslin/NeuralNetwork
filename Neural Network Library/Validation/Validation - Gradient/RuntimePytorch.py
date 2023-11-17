@@ -61,4 +61,3 @@ for i in range(4000):
 stop = timeit.default_timer()
 
 print('Time: ', stop - start)
-print(loss)
