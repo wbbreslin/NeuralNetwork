@@ -2,7 +2,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import Highams2019_Hessian_SOA as data
 
-'''Remove zeros from heatmap'''
 full_hessian = data.full_hessian
 
 min = np.abs(np.min(full_hessian))

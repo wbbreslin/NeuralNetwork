@@ -43,6 +43,8 @@ def create_network(x, y, neurons, activations):
             'Activations': activations}
     return nnet
 
+def create_network2(x,y,layers,activations):
+
 def load_nnet(path='output.pkl'):
     """Loads a neural network dictionary from a pickle file"""
     with open(path, 'rb') as pickle_file:

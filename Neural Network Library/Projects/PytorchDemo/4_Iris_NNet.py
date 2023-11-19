@@ -23,14 +23,14 @@ class NeuralNetwork(nn.Module):
     def forward(self, x):
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = self.fc3(x) #softmax is applied in nn.CrossEntropyLoss()
         return x
 
 # Create model instance
 model = NeuralNetwork()
 
 # Define loss function and optimizer
-criterion = nn.CrossEntropyLoss()
+criterion = nn.CrossEntropyLoss() #softmax applied internally here
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
 # Training loop
