@@ -11,7 +11,7 @@ def derivative(x):
     return x.grad
 
 # Value at which you want to evaluate the derivative
-x_value = 4
+x_value = 2
 
 # Computing the derivative at x = x_value
 derivative_value = derivative(x_value)

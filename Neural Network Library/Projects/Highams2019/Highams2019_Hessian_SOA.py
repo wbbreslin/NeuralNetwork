@@ -27,7 +27,9 @@ nnet['Weights']=weights
 
 '''Exact gradient calculation'''
 training_itr = 4000
+
 nnet = train.gradient_descent(nnet,max_iterations=training_itr)
+
 
 '''Full Hessian'''
 full_hessian = np.zeros((23,23))
