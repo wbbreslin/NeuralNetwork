@@ -1,28 +1,12 @@
 import Highams2019 as data
 import numpy as np
 import FirstOrderModel as fom
+import TrainingAlgorithms as train
 import copy
 
 '''Import the neural network and the data set'''
 nnet = data.nnet
-
-'''Define the initial weights'''
-w0 = np.array([[0.1, 0.2],
-               [0.3, 0.4],
-               [0.5, 0.6]])
-
-w1 = np.array([[0.7, 0.8, 0.9],
-               [1.0, 1.1, 1.2],
-               [1.3, 1.4, 1.5]])
-
-w2 = np.array([[1.6, 1.7],
-               [1.8, 1.9],
-               [2.0, 2.1],
-               [2.2, 2.3]])
-
-'''Use these custom weights to initialize the network'''
-weights = [w0, w1, w2]
-nnet['Weights']=weights
+nnet = train.gradient_descent(nnet, max_iterations=3999)
 
 '''Define the function we are differentiating'''
 def cost(y1,y2):
@@ -31,17 +15,14 @@ def cost(y1,y2):
     return loss
 
 '''Set up the gradient matrices'''
-g0 = np.zeros(w0.shape)
-g1 = np.zeros(w1.shape)
-g2 = np.zeros(w2.shape)
+g0 = np.zeros(nnet["Weights"][0].shape)
+g1 = np.zeros(nnet["Weights"][1].shape)
+g2 = np.zeros(nnet["Weights"][2].shape)
 gradients = [g0, g1, g2]
 
 '''A copy of the neural network to modify'''
 nnet_plus = copy.deepcopy(nnet)
 nnet_minus = copy.deepcopy(nnet)
-#nnet2['Weights'][0] = nnet2['Weights'][0]*2
-#print(nnet['Weights'][0])
-#print(nnet2['Weights'][0])
 
 epsilon = 10**-6
 

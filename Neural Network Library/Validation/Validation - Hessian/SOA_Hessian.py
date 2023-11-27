@@ -35,7 +35,7 @@ nnet = base.create_network(x_predictors,
 nnet['Weights'] = weights
 
 '''Exact gradient calculation'''
-training_itr = 4000
+training_itr = 1
 nnet = train.gradient_descent(nnet,max_iterations=training_itr)
 
 '''Full Hessian'''
@@ -56,7 +56,7 @@ for i in range(23):
     column = np.vstack((H0, H1, H2))
     full_hessian[:,i] = column[:,0]
 
-#print(full_hessian)
+print(full_hessian[:,1])
 #delta = full_hessian - full_hessian.T
 #cn = np.linalg.cond(full_hessian)
 #print(cn)
