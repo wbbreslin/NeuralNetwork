@@ -3,6 +3,7 @@ import Base as base
 
 
 def forward_pass(nnet, vectors):
+    #Forward pass through the tangent-linear model
     theta = np.zeros(nnet['Pass Forward'].shape)
     theta = base.to_vector(theta)
     thetas = [theta]
@@ -31,6 +32,7 @@ def forward_pass(nnet, vectors):
 
 
 def backward_pass(nnet, vectors):
+    #Backward pass through the second-order adjoint model
     n = nnet['Augmented_States'][0].shape[0]
     omega = nnet['Thetas'][-1]
     omegas = [omega]
@@ -59,6 +61,7 @@ def backward_pass(nnet, vectors):
     return nnet
 
 def Av_Tensor(nnet, i):
+    #Tensor-vector product for two x-derivatives of model equation
     vector = nnet['Thetas'][i]
     n = nnet['Augmented_States'][0].shape[0]
     Av = np.kron(nnet['Augmented_Weights'][i],np.eye(n)) \
@@ -69,6 +72,7 @@ def Av_Tensor(nnet, i):
     return Av
 
 def Bv_Tensor(nnet, vectors, i):
+    #Tensor-vector product for an x- and w- derivative of model equation
     n = nnet['Augmented_States'][0].shape[0]
     p = nnet['Augmented_Weights'][i].shape[0]
     q = nnet['Augmented_Weights'][i].shape[1]
@@ -83,6 +87,7 @@ def Bv_Tensor(nnet, vectors, i):
 
 """Need to fix this"""
 def Cv_Tensor(nnet, i):
+    #Tensor-vector product for w- and x- derivatives of model equation
     vector = nnet['Thetas'][i]
     n = nnet['Augmented_States'][0].shape[0]
     p = nnet['Augmented_Weights'][i].shape[0]
@@ -97,6 +102,7 @@ def Cv_Tensor(nnet, i):
     return Cv
 
 def Dv_Tensor(nnet, vectors, i):
+    #Tensor-vector product for two w-derivatives of model equation
     q = nnet['Augmented_Weights'][i].shape[1]
     Dv = np.kron(np.eye(q), nnet['Augmented_States'][i].T) \
          @ np.diagflat(nnet['Lambdas'][i+1]) \
@@ -106,6 +112,7 @@ def Dv_Tensor(nnet, vectors, i):
     return Dv
 
 def K1v_Product(weight, n, vector):
+    #Tensor-vector product for eliminating Kronecker product from second derivative
     matrix = base.to_matrix(vector, weight.shape)
     matrix = matrix[1:,]
     out = np.kron(matrix, np.eye(n))
@@ -113,6 +120,7 @@ def K1v_Product(weight, n, vector):
     return out
 
 def K2v_Product(weight, n, vector):
+    #Tensor-vector product for eliminating Kronecker product from second derivative
     p = weight.shape[0] - 1
     q = weight.shape[1]
     vector = base.to_matrix(vector,(n*p*n,q))

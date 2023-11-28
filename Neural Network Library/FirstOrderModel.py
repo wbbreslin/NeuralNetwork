@@ -2,12 +2,14 @@ import numpy as np
 import Base as base
 
 def first_order_model(nnet):
+    """Combines the forward and backward pass functions, while tracking cost"""
     nnet = forward_pass(nnet)
     nnet = track_cost(nnet)
     nnet = backward_pass(nnet)
     return nnet
 
 def forward_pass(nnet):
+    """Forward pass through the neural network"""
     states = [nnet['Pass Forward']]
     augmented_states = []
     augmented_weights = []
@@ -36,6 +38,7 @@ def forward_pass(nnet):
     return nnet
 
 def track_cost(nnet):
+    """Measures the cost at each iteration"""
     y_predictions = nnet['States'][-1]
     y_outcomes = nnet['Outcomes_Subset']
     cost = base.mean_squared_error(y_predictions, y_outcomes)
@@ -48,6 +51,7 @@ def track_cost(nnet):
     return nnet
 
 def backward_pass(nnet):
+    """Backward pass through the first-order adjoint model"""
     states = nnet['States']
     terminal_state = states[-1]
     y_outcomes = nnet['Outcomes_Subset']

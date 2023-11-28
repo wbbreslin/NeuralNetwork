@@ -3,6 +3,10 @@ import scipy.linalg
 import pickle
 
 def augment_predictor(x_predictors):
+    """
+    Adds a column of ones to a matrix
+    Note: This function needs to be updated
+    """
     dimensions = x_predictors.shape
     A1 = np.zeros((dimensions[1],1))
     A2 = np.eye(dimensions[1])
@@ -22,7 +26,13 @@ def augment_network(weights, biases):
     return augmented_weights
 
 def create_network(x, y, neurons, activations):
-    """Creates the neural network dictionary"""
+    """
+    Creates the neural network dictionary
+    x:              predictor variables (np array)
+    y:              response variables (np array)
+    neurons:        a list of integers for neurons in each layer
+    activations:    a list of strings for names of activation functions
+    """
     weights = []; biases = []
     layers = len(neurons)
     for i in range(layers-1):
@@ -67,6 +77,11 @@ def permutation_matrix(m, n):
     return np.eye(m * n)[w, :]
 
 def permutation_matrix_by_indices(U, V):
+    """
+    Returns a matrix that permutes rows and columns of a vector in any order based on U and V
+    U:  A vector of indices
+    V:  A vector of the same indicies, but in a different order
+    """
     M = np.zeros((len(U), len(V)))
     for u, v in zip(U, V):
         M[u, v] = 1

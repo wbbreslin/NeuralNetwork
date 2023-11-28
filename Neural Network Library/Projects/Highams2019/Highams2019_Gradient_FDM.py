@@ -30,8 +30,6 @@ for w in range(len(nnet['Weights'])):
     for row in range(nnet['Weights'][w].shape[0]):
         for col in range(nnet['Weights'][w].shape[1]):
             # Create separate copies of the weights for this iteration
-            #weights_minus = [w.copy() for w in nnet['Weights']]
-            #weights_plus = [w.copy() for w in nnet2['Weights']]
             nnet_plus = copy.deepcopy(nnet)
             nnet_minus = copy.deepcopy(nnet)
 
