@@ -89,6 +89,14 @@ Here is a visualization of the trained NN.
   <img src="https://github.com/wbbreslin/NeuralNetwork/blob/main/Images/Region.png" width=50% height=50%>
 </p>
 
+This was trained using gradient descent on the full data set (n=10). Below shows the convergence of the cost function, for both the gradient decent algorithm, and the stochastic gradient method using half-data batches (n=5).
+
+<p align="center">
+  <img src="https://github.com/wbbreslin/NeuralNetwork/blob/main/Images/CostFunctions.png" width=50% height=50%>
+</p>
+
+The code for training this model and making these plots can be found in the Highams2019 folder.
+
 ## Calculating Hessian-Vector Products
 To calculate the Hessian-Vector product, we do a forward and backward pass through the first-order model, then do another forward and backward pass using the second-order model. For many applications, we start with an already trained neural network, and do another forward and backward pass in the second-order model.
 
