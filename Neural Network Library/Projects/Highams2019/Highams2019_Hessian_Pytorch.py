@@ -1,28 +1,31 @@
-import Highams2019_Train_GradientDescent as data
 import torch
-import torch.nn as nn
+import Highams2019_Train_GradientDescent as data
 import numpy as np
 import Base as base
 
-nnet = data.nnet
-
+# Function to add a column of ones to a tensor
 def new_column(input_tensor):
     num_rows = input_tensor.size(0)
     ones_column = torch.ones(num_rows, 1)
     tensor_with_ones = torch.cat((ones_column, input_tensor), dim=1)
     return tensor_with_ones
 
-class CustomLoss(nn.Module):
-    def __init__(self):
-        super(CustomLoss, self).__init__()
-    def forward(self, predicted, target):
-        # Implement your custom loss calculation here
-        diff = (predicted - target)
-        loss = torch.trace(torch.mm(diff, diff.t()))/2
+nnet = data.nnet
 
-        return loss
+# Example: Load your network weights (Replace with your initialization)
+x0 = torch.tensor(nnet["Predictors"], requires_grad=False, dtype=torch.float64)
+w0 = torch.tensor(nnet["Weights"][0], requires_grad=True, dtype=torch.float64)
+w1 = torch.tensor(nnet["Weights"][1], requires_grad=True, dtype=torch.float64)
+w2 = torch.tensor(nnet["Weights"][2], requires_grad=True, dtype=torch.float64)
 
-def forward(x0):
+# Example: Define your custom loss function
+def custom_loss(predicted, target):
+    diff = (predicted - target)
+    loss = torch.trace(torch.mm(diff, diff.t())) / 2
+    return loss
+
+# Function to perform forward pass through the network
+def forward(x0, w0, w1, w2):
     z0 = new_column(x0)
     x1 = torch.mm(z0, w0)
     x1 = torch.sigmoid(x1)
@@ -32,26 +35,38 @@ def forward(x0):
     z2 = new_column(x2)
     x3 = torch.mm(z2, w2)
     x3 = torch.sigmoid(x3)
-    return(x3)
+    return x3
 
-x0 = torch.tensor(nnet["Predictors"], requires_grad=False, dtype=torch.float64)
-w0 = torch.tensor(nnet["Weights"][0], requires_grad=True, dtype=torch.float64)
-w1 = torch.tensor(nnet["Weights"][1], requires_grad=True, dtype=torch.float64)
-w2 = torch.tensor(nnet["Weights"][2], requires_grad=True, dtype=torch.float64)
-weights = [w0,w1,w2]
+# Calculate the loss
+output = forward(x0, w0, w1, w2)
+y_target = torch.tensor(nnet["Outcomes"], dtype=torch.float64)
+loss = custom_loss(output, y_target)
 
-for dw in weights:
-    v_length = dw.shape[0]*dw.shape[1]
-    for df in weights:
-        for i in range(v_length):
-            x3 = forward(x0)
-            criterion = CustomLoss()
-            y_target = torch.tensor(nnet["Outcomes"], dtype=torch.float64)
-            loss = criterion(x3, y_target)
-            grad_loss_df = torch.autograd.grad(loss, df, create_graph=True)[0]
-            vector_v = np.zeros((v_length,1))
-            vector_v[i] = 1
-            vector_v = base.to_matrix(vector_v, dw.shape)
-            vector_v = torch.tensor(vector_v, requires_grad=False, dtype=torch.float64)
-            hessian_vector_product = torch.autograd.grad(grad_loss_df, dw, vector_v, retain_graph=True)
-            print("Hessian-vector product:", hessian_vector_product)
+# Compute gradients
+params = [w0, w1, w2]
+grads = torch.autograd.grad(loss, params, create_graph=True)
+
+# Calculate the Hessian matrix
+hessian = []
+for grad_elem in grads:
+    grad_flat = grad_elem.view(-1)
+    hess_elem = []
+    for grad_i in grad_flat:
+        # Compute second derivatives
+        hess_grad = torch.autograd.grad(grad_i, params, retain_graph=True)
+        hess_flat = [h.view(-1) for h in hess_grad]
+        hess_elem.append(torch.cat(hess_flat))
+    hessian.append(torch.stack(hess_elem))
+
+hessian_matrix = torch.cat(hessian)
+
+V = np.array([1, 4, 2, 5, 3, 6, 7, 10, 13, 8, 11, 14, 9, 12, 15, 16, 20, 17, 21, 18, 22, 19, 23])-1
+U = np.arange(23)
+permutation = torch.tensor(base.permutation_matrix_by_indices(U,V), requires_grad=False, dtype=torch.float64)
+
+hessian_matrix = torch.mm(permutation.T, hessian_matrix)
+hessian_matrix = torch.mm(hessian_matrix, permutation)
+
+print("Hessian matrix shape:", hessian_matrix.shape)
+print(hessian_matrix[:,0])
+print(sum(hessian_matrix[:,0]))

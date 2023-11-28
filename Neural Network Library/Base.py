@@ -66,6 +66,12 @@ def permutation_matrix(m, n):
     w = np.arange(m * n).reshape((m, n), order="F").T.ravel(order="F")
     return np.eye(m * n)[w, :]
 
+def permutation_matrix_by_indices(U, V):
+    M = np.zeros((len(U), len(V)))
+    for u, v in zip(U, V):
+        M[u, v] = 1
+    return M
+
 def relu(x):
     return np.maximum(0, x)
 
