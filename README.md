@@ -8,7 +8,7 @@ The main feature of this repository contains code for evaluating Hessian-vector 
 Calculating the gradient requires a forward pass through the network, and a backward pass through an adjoint model (first-order adjoint). Computing Hessian-vector products involves another forward pass through a tangent-linear model (TLM) and another backward pass through the second-order adjoint model, as pictured in the diagram below. 
 
 <p align="center">
-  <img src="https://github.com/wbbreslin/NeuralNetwork/blob/main/Images/SOA.png" width=75% height=75%>
+  <img src="https://github.com/wbbreslin/NeuralNetwork/blob/main/Images/SOA.png" width=50% height=50%>
 </p>
 
 ## How to Use
@@ -92,7 +92,7 @@ Here is a visualization of the trained NN.
 This was trained using gradient descent on the full data set (n=10). Below shows the convergence of the cost function, for both the gradient decent algorithm, and the stochastic gradient method using half-data batches (n=5).
 
 <p align="center">
-  <img src="https://github.com/wbbreslin/NeuralNetwork/blob/main/Images/CostFunctions.png" width=50% height=50%>
+  <img src="https://github.com/wbbreslin/NeuralNetwork/blob/main/Images/CostFunctions.png" width=75% height=75%>
 </p>
 
 The code for training this model and making these plots can be found in the Highams2019 folder.
