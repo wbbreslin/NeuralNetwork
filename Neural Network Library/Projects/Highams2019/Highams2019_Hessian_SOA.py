@@ -24,7 +24,7 @@ for i in range(23):
     column = np.vstack((H0, H1, H2))
     full_hessian[:,i] = column[:,0]
 
-#print(full_hessian)
+print(full_hessian[:,0])
 #delta = full_hessian - full_hessian.T
 #cn = np.linalg.cond(full_hessian)
 #print(cn)
