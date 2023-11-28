@@ -1,10 +1,15 @@
 ## Neural Networks
-This repository contains code for training Neural Networks, and evaluating Hessian-vector products for the cost functional using model-constrained opitimzation theory.
+The main feature of this repository contains code for evaluating Hessian-vector products for neural networks using matrix differential calculus and dynamical systems theory. Hessian-vector products are useful for network pruning, optimal data collection, and measuring the sensitivity of the network to data removal, to name a few applications. 
 
 <p align="center">
   <img src="https://github.com/wbbreslin/NeuralNetwork/blob/main/Images/NNet1.png">
 </p>
 
+Calculating the gradient requires a forward pass through the network, and a backward pass through an adjoint model (first-order adjoint). Computing Hessian-vector products involves another forward pass through a tangent-linear model (TLM) and another backward pass through the second-order adjoint model, as pictured in the diagram below. 
+
+<p align="center">
+  <img src="https://github.com/wbbreslin/NeuralNetwork/blob/main/Images/SOA.png">
+</p>
 
 ## How to Use
 Download the .py files in the Neural Network Library folder. There are four files:
