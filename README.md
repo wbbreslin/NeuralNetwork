@@ -8,7 +8,7 @@ The main feature of this repository contains code for evaluating Hessian-vector 
 Calculating the gradient requires a forward pass through the network, and a backward pass through an adjoint model (first-order adjoint). Computing Hessian-vector products involves another forward pass through a tangent-linear model (TLM) and another backward pass through the second-order adjoint model, as pictured in the diagram below. 
 
 <p align="center">
-  <img src="https://github.com/wbbreslin/NeuralNetwork/blob/main/Images/SOA.png" width=50% height=50%>
+  <img src="https://github.com/wbbreslin/NeuralNetwork/blob/main/Images/SOA.png" width=75% height=75%>
 </p>
 
 ## How to Use
