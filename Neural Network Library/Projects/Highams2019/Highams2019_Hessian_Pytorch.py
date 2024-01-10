@@ -2,6 +2,7 @@ import torch
 import Highams2019_Train_GradientDescent as data
 import numpy as np
 import Base as base
+import matplotlib.pyplot as plt
 
 # Function to add a column of ones to a tensor
 def new_column(input_tensor):

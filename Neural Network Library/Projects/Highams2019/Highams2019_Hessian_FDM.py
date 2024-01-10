@@ -51,3 +51,5 @@ H = Hessians
 full_hessian = np.bmat([[H[0], H[1], H[2]],
                        [H[3], H[4], H[5]],
                        [H[6], H[7], H[8]]])
+
+print(full_hessian[:,0])
