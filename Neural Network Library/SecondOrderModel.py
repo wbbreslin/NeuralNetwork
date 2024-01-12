@@ -9,6 +9,7 @@ def forward_pass(nnet, vectors):
     thetas = [theta]
     second_derivatives = []
     n = nnet['Augmented_States'][0].shape[0]
+    act_second_derivatives = nnet['Activation_Second_Derivatives']
 
     for i in range(len(nnet['Augmented_Weights'])):
         q = nnet['Augmented_Weights'][i].shape[1]
@@ -21,7 +22,7 @@ def forward_pass(nnet, vectors):
         thetas.append(new_theta)
         xw = nnet['Augmented_States'][i] @ nnet['Weights'][i]
         xw_vec = base.to_vector(xw)
-        d2 = np.diagflat(base.sigmoid_second_derivative(xw_vec))
+        d2 = np.diagflat(act_second_derivatives[i](xw_vec))
         second_derivatives.append(d2)
 
     output = {'Thetas': thetas,

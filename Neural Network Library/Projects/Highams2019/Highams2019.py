@@ -14,4 +14,6 @@ np.random.seed(100)
 nnet = base.create_network(x_predictors,
                            y_outcomes,
                            neurons = [2,2,3,2],
-                           activations = ["sigmoid","sigmoid","sigmoid","sigmoid"])
+                           activations = [base.sigmoid,
+                                          base.sigmoid,
+                                          base.sigmoid])
