@@ -16,13 +16,15 @@ def forward_pass(nnet):
     first_derivatives = []
     x_predictors = nnet['Pass Forward']
     weights = nnet['Weights']
+    activations = nnet['Activations']
+    act_derivatives = nnet['Activation_Derivatives']
     for i in range(len(nnet['Weights'])):
         z, A, B = base.augment_predictor(x_predictors)
         augmented_states.append(z)
         xw = z @ weights[i]
-        x_predictors = base.sigmoid(xw)
+        x_predictors = activations[i](xw)
         xw_vec = base.to_vector(xw)
-        d1 = np.diagflat(base.sigmoid_derivative(xw_vec))
+        d1 = np.diagflat(act_derivatives[i](xw_vec))
         first_derivatives.append(d1)
         states.append(x_predictors)
         aug_weight = A @ weights[i]

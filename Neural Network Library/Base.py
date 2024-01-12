@@ -42,7 +42,10 @@ def create_network(x, y, neurons, activations):
         bias = np.random.rand(next_layer, 1)*0.5
         weights.append(weight)
         biases.append(bias)
-
+    act_first_derivatives = [fn.__name__ + "_derivative" for fn in activations]
+    act_first_derivatives = [globals()[fn] for fn in act_first_derivatives]
+    act_second_derivatives = [fn.__name__ + "_second_derivative" for fn in activations]
+    act_second_derivatives = [globals()[fn] for fn in act_second_derivatives]
     weights = augment_network(weights, biases)
     nnet = {'Predictors': x,
             'Pass Forward': x.copy(),
@@ -50,7 +53,9 @@ def create_network(x, y, neurons, activations):
             'Outcomes_Subset': y.copy(),
             'Weights': weights,
             'Neurons': neurons,
-            'Activations': activations}
+            'Activations': activations,
+            'Activation_Derivatives': act_first_derivatives,
+            'Activation_Second_Derivatives': act_second_derivatives}
     return nnet
 
 def load_nnet(path='output.pkl'):
@@ -86,6 +91,14 @@ def permutation_matrix_by_indices(U, V):
     for u, v in zip(U, V):
         M[u, v] = 1
     return M
+
+def generate_random_indices(num_rows, random_seed=None):
+
+    if random_seed is not None:
+        np.random.seed(random_seed)
+
+    random_indices = np.random.permutation(num_rows)
+    return random_indices
 
 def relu(x):
     return np.maximum(0, x)
