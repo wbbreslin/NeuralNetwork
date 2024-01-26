@@ -58,6 +58,27 @@ def create_network(x, y, neurons, activations):
             'Activation_Second_Derivatives': act_second_derivatives}
     return nnet
 
+def indices_of_smallest_nonzero_k(arr, k):
+    # Find the non-zero elements
+    non_zero_values = arr[arr != 0]
+
+    # Check if there are enough non-zero values to find the smallest k
+    if len(non_zero_values) >= k:
+        # Find the indices of the smallest k non-zero values
+        indices_nonzero = np.argpartition(non_zero_values, k)[:k]
+
+        # Get the corresponding non-zero values
+        smallest_nonzero_values = non_zero_values[indices_nonzero]
+
+        # Find the indices of these values in the original array
+        indices = np.where(np.isin(arr, smallest_nonzero_values))
+
+        return indices
+    else:
+        # If there are not enough non-zero values, raise an exception or handle it as needed
+        raise ValueError("Not enough non-zero values to find the smallest k.")
+
+
 def load_nnet(path='output.pkl'):
     """Loads a neural network dictionary from a pickle file"""
     with open(path, 'rb') as pickle_file:
@@ -99,6 +120,16 @@ def generate_random_indices(num_rows, random_seed=None):
 
     random_indices = np.random.permutation(num_rows)
     return random_indices
+
+def parameter_vector_to_weights(parameter_vector, weights):
+    elements = [w.size for w in weights]
+    partitions = np.append(0, np.cumsum(elements))
+    weights_list = []
+    for i in range(len(weights)):
+        partition = parameter_vector[partitions[i]:partitions[i + 1]]
+        partition = partition.reshape(weights[i].shape, order='F')
+        weights_list.append(partition)
+    return(weights_list)
 
 def relu(x):
     return np.maximum(0, x)
@@ -159,3 +190,8 @@ def to_vector(matrix):
     vector_dimensions = np.prod(matrix_dimensions)
     vector = matrix.reshape((vector_dimensions,1), order="F")
     return vector
+
+def weights_to_parameter_vector(weights):
+    vectorized_weights = [to_vector(w) for w in weights]
+    vec = np.vstack(vectorized_weights)
+    return(vec)

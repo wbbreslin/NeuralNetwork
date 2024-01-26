@@ -3,6 +3,7 @@ import SecondOrderModel as som
 import TrainingAlgorithms as train
 import numpy as np
 import Base as base
+import matplotlib.pyplot as plt
 
 """The data set of predictor variables"""
 x_predictors = np.array([[0.1,0.3,0.1,0.6,0.4,0.6,0.5,0.9,0.4,0.7],
@@ -33,9 +34,15 @@ def prune_network(nnet):
 
     #Saliency Analysis
     s = saliency(nnet)
-    index_of_smallest_non_zero = np.argmin(data[data != 0])
+    indices_to_remove = base.indices_of_smallest_nonzero_k(s, 4)
 
+    #Update Pruning Matrices
+    pruning_matrices = base.weights_to_parameter_vector(pruning_matrices)
+    pruning_matrices[indices_to_remove] = 0
+    pruning_matrices = base.parameter_vector_to_weights(pruning_matrices,nnet['Gradients'])
 
+    # Retrain after pruning
+    nnet = train.gradient_descent(nnet, step_size=0.25, max_iterations=4000, pruning_matrices=pruning_matrices)
     return(nnet)
 
 def saliency(nnet):
@@ -76,7 +83,8 @@ def hessian_matrix(nnet):
     return(full_hessian)
 
 
+
 nnet = prune_network(nnet)
-s = saliency(nnet)
-print(s)
-print(np.percentile(s,20))
+
+plt.plot(nnet['Cost'])
+plt.show()

@@ -15,7 +15,7 @@ def gradient_descent(nnet,
             if len(pruning_matrices)==0:
                 nnet['Weights'][k] = nnet['Weights'][k] - step_size * nnet['Gradients'][k]
             else:
-                nnet['Weights'][k] = nnet['Weights'][k] - step_size * pruning_matrices[k] * nnet['Gradients'][k]
+                nnet['Weights'][k] = nnet['Weights'][k] * pruning_matrices[k] - step_size * pruning_matrices[k] * nnet['Gradients'][k]
 
     return nnet
 
