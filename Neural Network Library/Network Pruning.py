@@ -22,9 +22,20 @@ nnet = base.create_network(x_predictors,
                                           base.sigmoid])
 
 def prune_network(nnet):
+    #Initialization
     weights = nnet['Weights']
+    elements = [w.size for w in weights]
+    partitions = np.append(0, np.cumsum(elements))
     pruning_matrices = [np.ones(x.shape) for x in weights]
+
+    #Training
     nnet = train.gradient_descent(nnet, step_size=0.25, max_iterations=4000, pruning_matrices=pruning_matrices)
+
+    #Saliency Analysis
+    s = saliency(nnet)
+    index_of_smallest_non_zero = np.argmin(data[data != 0])
+
+
     return(nnet)
 
 def saliency(nnet):
@@ -35,8 +46,7 @@ def saliency(nnet):
     inverse_hessian = np.linalg.inv(hessian)
     diagonals = np.array(np.diag(inverse_hessian))
     diagonals = diagonals.reshape((len(vec_weights),1))
-    print(diagonals)
-    saliency = vec_weights**2 / (2 * diagonals)
+    saliency = vec_weights**2 / (2 * abs(diagonals))
     return(saliency)
 
 def hessian_matrix(nnet):
@@ -69,3 +79,4 @@ def hessian_matrix(nnet):
 nnet = prune_network(nnet)
 s = saliency(nnet)
 print(s)
+print(np.percentile(s,20))
