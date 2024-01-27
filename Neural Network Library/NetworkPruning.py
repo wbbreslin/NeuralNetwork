@@ -2,26 +2,9 @@ import SecondOrderModel as som
 import TrainingAlgorithms as train
 import numpy as np
 import Base as base
-import matplotlib.pyplot as plt
 
-"""The data set of predictor variables"""
-x_predictors = np.array([[0.1,0.3,0.1,0.6,0.4,0.6,0.5,0.9,0.4,0.7],
-                        [0.1,0.4,0.5,0.9,0.2,0.3,0.6,0.2,0.4,0.6]]).T
 
-"""The data set of outcome variables"""
-y_outcomes = np.array([[1,1,1,1,1,0,0,0,0,0],
-                      [0,0,0,0,0,1,1,1,1,1]]).T
-
-"""Define the neural network structure"""
-np.random.seed(100)
-nnet = base.create_network(x_predictors,
-                           y_outcomes,
-                           neurons = [2,2,3,2],
-                           activations = [base.sigmoid,
-                                          base.sigmoid,
-                                          base.sigmoid])
-
-def prune_network(nnet):
+def single_step_prune(nnet, remove):
     #Initialization
     weights = nnet['Weights']
     pruning_matrices = [np.ones(x.shape) for x in weights]
@@ -31,7 +14,7 @@ def prune_network(nnet):
 
     #Saliency Analysis
     s = saliency(nnet)
-    indices_to_remove = base.indices_of_smallest_nonzero_k(s, 4)
+    indices_to_remove = base.indices_of_smallest_nonzero_k(s, remove)
 
     #Update Pruning Matrices
     pruning_matrices = base.weights_to_parameter_vector(pruning_matrices)
@@ -39,9 +22,31 @@ def prune_network(nnet):
     pruning_matrices = base.parameter_vector_to_weights(pruning_matrices,nnet['Gradients'])
 
     # Retrain after pruning
-    nnet = train.gradient_descent(nnet, step_size=0.25, max_iterations=4000, pruning_matrices=pruning_matrices)
+    nnet = train.gradient_descent(nnet, step_size=0.25, max_iterations=6000, pruning_matrices=pruning_matrices)
     return nnet
 
+def iterative_prune(nnet, itr, remove):
+    #Initialization
+    weights = nnet['Weights']
+    pruning_matrices = [np.ones(x.shape) for x in weights]
+
+    #Initial Training
+    nnet = train.gradient_descent(nnet, step_size=0.25, max_iterations=4000, pruning_matrices=pruning_matrices)
+
+    for i in range(itr):
+        #Saliency Analysis
+        s = saliency(nnet)
+        indices_to_remove = base.indices_of_smallest_nonzero_k(s,remove)
+
+        #Update Pruning Matrices
+        pruning_matrices = base.weights_to_parameter_vector(pruning_matrices)
+        pruning_matrices[indices_to_remove] = 0
+        pruning_matrices = base.parameter_vector_to_weights(pruning_matrices,nnet['Gradients'])
+
+        # Retrain after pruning
+        nnet = train.gradient_descent(nnet, step_size=0.25, max_iterations=4000, pruning_matrices=pruning_matrices)
+    print(pruning_matrices)
+    return nnet
 def saliency(nnet):
     weights = nnet['Weights']
     vec_weights = [base.to_vector(w) for w in weights]
@@ -81,7 +86,3 @@ def hessian_matrix(nnet):
 
 
 
-nnet = prune_network(nnet)
-
-plt.plot(nnet['Cost'])
-plt.show()

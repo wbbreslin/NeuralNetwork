@@ -1,4 +1,4 @@
-import Iris2class as data
+from Projects.Iris import Iris2class as data
 import Base as base
 import FirstOrderModel as fom
 import copy
