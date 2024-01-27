@@ -1,4 +1,3 @@
-import FirstOrderModel as fom
 import SecondOrderModel as som
 import TrainingAlgorithms as train
 import numpy as np
@@ -25,8 +24,6 @@ nnet = base.create_network(x_predictors,
 def prune_network(nnet):
     #Initialization
     weights = nnet['Weights']
-    elements = [w.size for w in weights]
-    partitions = np.append(0, np.cumsum(elements))
     pruning_matrices = [np.ones(x.shape) for x in weights]
 
     #Training
@@ -43,7 +40,7 @@ def prune_network(nnet):
 
     # Retrain after pruning
     nnet = train.gradient_descent(nnet, step_size=0.25, max_iterations=4000, pruning_matrices=pruning_matrices)
-    return(nnet)
+    return nnet
 
 def saliency(nnet):
     weights = nnet['Weights']
@@ -53,8 +50,8 @@ def saliency(nnet):
     inverse_hessian = np.linalg.inv(hessian)
     diagonals = np.array(np.diag(inverse_hessian))
     diagonals = diagonals.reshape((len(vec_weights),1))
-    saliency = vec_weights**2 / (2 * abs(diagonals))
-    return(saliency)
+    saliency_statistic = vec_weights**2 / (2 * abs(diagonals))
+    return saliency_statistic
 
 def hessian_matrix(nnet):
     weights = nnet['Weights']
@@ -80,7 +77,7 @@ def hessian_matrix(nnet):
         for c in range(len(columns)-1):
             column_hessian = np.vstack((column_hessian,columns[c+1]))
         full_hessian[:,i] = column_hessian[:,0]
-    return(full_hessian)
+    return full_hessian
 
 
 
