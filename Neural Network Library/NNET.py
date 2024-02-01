@@ -11,7 +11,7 @@ class neural_network:
 
         # Validation Data
         x_validation = None
-        y_training = None
+        y_validation = None
 
         # Cost function
         self.costs = cost_function
@@ -23,10 +23,31 @@ class neural_network:
         self.activation_jacobian_functions = [getattr(af, function) for function in activation_jacobian_names]
         self.activation_hessian_functions = [getattr(af, function) for function in activation_hessian_names]
 
-    def load_training_data(self,x_training,y_training):
-        self.x_training = x_training
-        self.y_training = y_training
+    def load_training_data(self,x,y):
+        self.x_training = x
+        self.y_training = y
 
+    def load_validation_data(self,x,y):
+        self.x_validation = x
+        self.y_validation = y
+
+
+class data:
+    def __init__(self,x,y):
+        self.x = x
+        self.y = y
+        self.training_x = None
+        self.training_y = None
+        self.validation_x = None
+        self.validation_y = None
+
+    def load_training_data(self,x,y):
+        self.x_training = x
+        self.y_training = y
+
+    def load_validation_data(self,x,y):
+        self.x_validation = x
+        self.y_validation = y
 
 
 """The data set of predictor variables"""
