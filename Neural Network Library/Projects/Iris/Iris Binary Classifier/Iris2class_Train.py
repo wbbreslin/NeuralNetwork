@@ -1,4 +1,4 @@
-from Projects.Iris import Iris2class as data
+import Iris2class as data
 import TrainingAlgorithms as train
 import copy
 import Base as base
