@@ -25,9 +25,22 @@ class neural_network:
             self.weights.append(np.random.rand(self.layers[i]+1,self.layers[i+1]))
 
     def forward(self,data):
+        ones_column = np.ones((data.training_x.shape[0], 1))
         self.states = [data.training_x]
+        self.augmented_states = []
+
         for i in range(len(self.activation_functions)):
-            self.states.append(self.activation_functions[i](self.states[i]))
+            ones_column = np.ones((self.states[i].shape[0], 1))
+            self.augmented_states.append(np.hstack((ones_column, self.states[i])))
+            self.states.append(self.activation_functions[i](self.augmented_states[i] @ self.weights[i]))
+
+    def backward(self,data):
+        λ = base.to_vector(self.states[-1] - data.training_y)
+        self.lambdas = [λ]
+        for i in reversed(range(len(self.activation_functions))):
+
+
+
 
 
 class data:
@@ -64,6 +77,8 @@ class data:
 """The data set of predictor variables"""
 x = np.array([[0.1,0.3,0.1,0.6,0.4,0.6,0.5,0.9,0.4,0.7],
               [0.1,0.4,0.5,0.9,0.2,0.3,0.6,0.2,0.4,0.6]]).T
+
+
 """The data set of outcome variables"""
 y = np.array([[1,1,1,1,1,0,0,0,0,0],
               [0,0,0,0,0,1,1,1,1,1]]).T
@@ -72,11 +87,13 @@ y = np.array([[1,1,1,1,1,0,0,0,0,0],
 np.random.seed(100)
 
 df = data(x,y)
-df.test_train_split(train_percent=0.75)
+df.test_train_split(train_percent=0.8)
 nnet = neural_network(layers=[2,2,3,2],
                       activation_functions = [af.sigmoid,af.sigmoid,af.sigmoid],
                       cost_function=cf.mean_squared_error)
 
 nnet.randomize_weights()
+nnet.forward(df)
 
-
+print(nnet.states[3])
+print(nnet.augmented_states[3])
