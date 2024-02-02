@@ -5,13 +5,9 @@ import CostFunctions as cf
 class neural_network:
     def __init__(self, layers, activation_functions, cost_function):
 
-        # Training Data
-        x_training = None
-        y_training = None
-
-        # Validation Data
-        x_validation = None
-        y_validation = None
+        # Input variables
+        self.layers = layers
+        self.weights = []
 
         # Cost function
         self.costs = cost_function
@@ -23,13 +19,15 @@ class neural_network:
         self.activation_jacobian_functions = [getattr(af, function) for function in activation_jacobian_names]
         self.activation_hessian_functions = [getattr(af, function) for function in activation_hessian_names]
 
-    def load_training_data(self,x,y):
-        self.x_training = x
-        self.y_training = y
+    def randomize_weights(self):
+        self.weights = []
+        for i in range(len(self.activation_functions)):
+            self.weights.append(np.random.rand(self.layers[i]+1,self.layers[i+1]))
 
-    def load_validation_data(self,x,y):
-        self.x_validation = x
-        self.y_validation = y
+    def forward(self,data):
+        self.states = [data.training_x]
+        for i in range(len(self.activation_functions)):
+            self.states.append(self.activation_functions[i](self.states[i]))
 
 
 class data:
@@ -42,32 +40,43 @@ class data:
         self.validation_y = None
 
     def load_training_data(self,x,y):
-        self.x_training = x
-        self.y_training = y
+        self.training_x = x
+        self.training_y = y
 
     def load_validation_data(self,x,y):
-        self.x_validation = x
-        self.y_validation = y
+        self.validation_x = x
+        self.validation_y = y
+
+    def test_train_split(self,train_percent=0.8, seed=None):
+        rows = self.x.shape[0]
+        indices = base.generate_random_indices(rows, random_seed=seed)
+        split = int(np.round(rows * train_percent))
+        train_indices = indices[0:split]
+        test_indices = indices[split:]
+        self.training_x = self.x[train_indices]
+        self.training_y = self.y[train_indices]
+        self.validation_x = self.x[test_indices]
+        self.validation_y = self.y[test_indices]
+        self.x = None
+        self.y = None
 
 
 """The data set of predictor variables"""
-x_training = np.array([[0.1,0.3,0.1,0.6,0.4,0.6,0.5,0.9,0.4,0.7],
-                        [0.1,0.4,0.5,0.9,0.2,0.3,0.6,0.2,0.4,0.6]]).T
+x = np.array([[0.1,0.3,0.1,0.6,0.4,0.6,0.5,0.9,0.4,0.7],
+              [0.1,0.4,0.5,0.9,0.2,0.3,0.6,0.2,0.4,0.6]]).T
 """The data set of outcome variables"""
-y_training = np.array([[1,1,1,1,1,0,0,0,0,0],
-                      [0,0,0,0,0,1,1,1,1,1]]).T
+y = np.array([[1,1,1,1,1,0,0,0,0,0],
+              [0,0,0,0,0,1,1,1,1,1]]).T
 
 """Define the neural network structure"""
 np.random.seed(100)
 
-nnet = neural_network(layers=[2,4,4,2],
+df = data(x,y)
+df.test_train_split(train_percent=0.75)
+nnet = neural_network(layers=[2,2,3,2],
                       activation_functions = [af.sigmoid,af.sigmoid,af.sigmoid],
                       cost_function=cf.mean_squared_error)
 
-nnet.load_training_data(x_training, y_training)
+nnet.randomize_weights()
 
-#print(nnet.activation_functions)
-#print(nnet.activation_jacobian_functions)
-#print(nnet.activation_hessian_functions)
 
-print(nnet.x_training)
