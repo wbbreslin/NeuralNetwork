@@ -18,7 +18,7 @@ class neural_network:
         activation_hessian_names = [function.__name__ + "_second_derivative" for function in self.activation_functions]
         self.activation_jacobian_functions = [getattr(af, function) for function in activation_jacobian_names]
         self.activation_hessian_functions = [getattr(af, function) for function in activation_hessian_names]
-
+        self.activation_jacobian_matrix = None
     def randomize_weights(self):
         self.weights = []
         for i in range(len(self.activation_functions)):
@@ -28,18 +28,38 @@ class neural_network:
         ones_column = np.ones((data.training_x.shape[0], 1))
         self.states = [data.training_x]
         self.augmented_states = []
+        self.activation_jacobian_matrices = []
 
         for i in range(len(self.activation_functions)):
             ones_column = np.ones((self.states[i].shape[0], 1))
             self.augmented_states.append(np.hstack((ones_column, self.states[i])))
-            self.states.append(self.activation_functions[i](self.augmented_states[i] @ self.weights[i]))
+            z = self.augmented_states[i] @ self.weights[i]
+            self.states.append(self.activation_functions[i](z))
+            self.activation_jacobian_matrices.append(np.diagflat(base.to_vector(self.activation_jacobian_functions[i](z))))
 
     def backward(self,data):
+        n = self.states[-1]
         λ = base.to_vector(self.states[-1] - data.training_y)
         self.lambdas = [λ]
+        self.gradients = []
+
         for i in reversed(range(len(self.activation_functions))):
+            p = self.layers[i]
+            z = base.to_vector(self.augmented_states[i] @ self.weights[i])
+            jacobian = self.activation_jacobian_functions[i](z)
+            no_bias_weight = self.weights[i][1:,:]
+            print(np.kron(np.eye(p),self.augmented_states[i]).shape)
+            print(self.activation_jacobian_matrices[i].shape)
+            print(λ.shape)
+            gradient = np.kron(np.eye(p),self.augmented_states[i]) \
+                       @ self.activation_jacobian_matrices[i] \
+                       @ λ
 
+            new_λ = np.kron(no_bias_weight, np.eye(n)) \
+                    @ self.activation_jacobian_matrices[i] \
+                    @ λ
 
+            λ = new_lambda
 
 
 
@@ -94,6 +114,4 @@ nnet = neural_network(layers=[2,2,3,2],
 
 nnet.randomize_weights()
 nnet.forward(df)
-
-print(nnet.states[3])
-print(nnet.augmented_states[3])
+nnet.backward(df)
