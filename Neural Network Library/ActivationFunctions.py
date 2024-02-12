@@ -5,6 +5,10 @@ def relu(x):
 
 def relu_derivative(x):
     return 1 if relu(x) > 0 else 0
+
+def relu_second_derivative(x):
+    return 0*x
+
 def sigmoid(x):
     y = 1/(1+np.exp(-x))
     return y

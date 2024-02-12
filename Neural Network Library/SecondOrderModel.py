@@ -86,7 +86,6 @@ def Bv_Tensor(nnet, vectors, i):
          @ vectors[i]
     return Bv
 
-"""Need to fix this"""
 def Cv_Tensor(nnet, i):
     #Tensor-vector product for w- and x- derivatives of model equation
     vector = nnet['Thetas'][i]

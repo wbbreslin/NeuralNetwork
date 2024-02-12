@@ -1,16 +1,20 @@
 import Base as base
 import numpy as np
 import ActivationFunctions as af
-import CostFunctions as cf
 class neural_network:
     def __init__(self, layers, activation_functions, cost_function):
 
         # Input variables
         self.layers = layers
         self.weights = []
+        self.augmented_states=[]
+        self.augmented_weights = []
+        self.states = []
+        self.gradients = []
 
         # Cost function
-        self.costs = cost_function
+        self.cost_function = cost_function
+        self.costs = []
 
         # Activation functions and the derivative functions
         self.activation_functions = activation_functions
@@ -18,15 +22,21 @@ class neural_network:
         activation_hessian_names = [function.__name__ + "_second_derivative" for function in self.activation_functions]
         self.activation_jacobian_functions = [getattr(af, function) for function in activation_jacobian_names]
         self.activation_hessian_functions = [getattr(af, function) for function in activation_hessian_names]
-        self.activation_jacobian_matrix = None
+        self.activation_jacobian_matrices = []
+        self.activation_hessian_matrices = []
+
+        #Adjoint variables
+        self.lambdas = []
+        self.thetas = []
+        self.omegas = []
+
     def randomize_weights(self):
         self.weights = []
         for i in range(len(self.activation_functions)):
             self.weights.append(np.random.rand(self.layers[i]+1,self.layers[i+1]))
 
     def forward(self,data):
-        ones_column = np.ones((data.training_x.shape[0], 1))
-        self.states = [data.training_x]
+        self.states = [data.x]
         self.augmented_states = []
         self.activation_jacobian_matrices = []
 
@@ -38,80 +48,118 @@ class neural_network:
             self.activation_jacobian_matrices.append(np.diagflat(base.to_vector(self.activation_jacobian_functions[i](z))))
 
     def backward(self,data):
-        n = self.states[-1]
-        λ = base.to_vector(self.states[-1] - data.training_y)
+        n = self.states[-1].shape[0]
+        λ = base.to_vector(self.states[-1] - data.y)
         self.lambdas = [λ]
         self.gradients = []
+        self.augmented_weights = []
 
         for i in reversed(range(len(self.activation_functions))):
-            p = self.layers[i]
-            z = base.to_vector(self.augmented_states[i] @ self.weights[i])
-            jacobian = self.activation_jacobian_functions[i](z)
+            p = self.layers[i+1]
             no_bias_weight = self.weights[i][1:,:]
-            print(np.kron(np.eye(p),self.augmented_states[i]).shape)
-            print(self.activation_jacobian_matrices[i].shape)
-            print(λ.shape)
-            gradient = np.kron(np.eye(p),self.augmented_states[i]) \
+
+            gradient = np.kron(np.eye(p),self.augmented_states[i]).T \
                        @ self.activation_jacobian_matrices[i] \
                        @ λ
 
-            new_λ = np.kron(no_bias_weight, np.eye(n)) \
+            new_lambda = np.kron(no_bias_weight, np.eye(n)) \
                     @ self.activation_jacobian_matrices[i] \
                     @ λ
 
+            gradient = base.to_matrix(gradient, self.weights[i].shape)
+            self.gradients.append(gradient)
+            self.lambdas.append(new_lambda)
+            self.augmented_weights.append(no_bias_weight)
             λ = new_lambda
 
+        self.gradients.reverse()
+        self.lambdas.reverse()
+        self.augmented_weights.reverse()
+
+    def Av_Tensor(self, i):
+        #Need to save (augmented weights)
+        vector = self.thetas[i]
+        n = self.augmented_states[0].shape[0]
+        Av = np.kron(self.augmented_states[i], np.eye(n)) \
+             @ np.diagflat(self.lambdas[i+1]) \
+             @ self.activation_hessian_matrices[i] \
+             @ np.kron(self.augmented_weights[i], np.eye(n)).T \
+             @ vector
+        return Av
+
+    def Bv_Tensor(self, vectors, i):
+        # Tensor-vector product for an x- and w- derivative of model equation
+        n = self.augmented_states[0].shape[0]
+        p = self.augmented_weights[i].shape[0]
+        q = self.augmented_weights[i].shape[1]
+        Bv = np.kron(self.lambdas[i + 1].T @ self.activation_jacobian_matrices[i], np.eye(n * p)) \
+             @ K1v_Product(self.weights[i], n, vectors[i]) \
+             + np.kron(self.augmented_weights[i], np.eye(n)) \
+             @ np.diagflat(self.lambdas[i + 1]) \
+             @ self.activation_hessian_matrices[i] \
+             @ np.kron(np.eye(q), self.augmented_states[i]) \
+             @ vectors[i]
+        return Bv
+
+    def Cv_Tensor(self, i):
+        # Tensor-vector product for w- and x- derivatives of model equation
+        vector = self.thetas[i]
+        n = self.augmented_states[0].shape[0]
+        p = self.augmented_weights[i].shape[0]
+        q = self.augmented_weights[i].shape[1]
+        v = np.kron(self.activation_jacobian_matrices[i] @ self.lambdas[i + 1], np.eye(n * p)) @ vector
+        Cv = K2v_Product(self.weights[i], n, v) \
+             + (np.kron(self.augmented_weights[i], np.eye(n))
+                @ np.diagflat(self.lambdas[i + 1])
+                @ self.activation_hessian_matrices[i]
+                @ np.kron(np.eye(q), self.augmented_states[i])).T \
+             @ vector
+        return Cv
+
+    def Dv_Tensor(self, vectors, i):
+        # Tensor-vector product for two w-derivatives of model equation
+        q = self.augmented_weights[i].shape[1]
+        Dv = np.kron(np.eye(q), self.augmented_states[i].T) \
+             @ np.diagflat(self.lambdas[i + 1]) \
+             @ self.activation_hessian_matrices[i] \
+             @ np.kron(np.eye(q), self.augmented_states[i]) \
+             @ vectors[i]
+        return Dv
+
+    def update(self, step_size=0.05):
+        for i in range(len(self.weights)):
+            self.weights[i] = self.weights[i] - step_size * self.gradients[i]
+
+    def track_cost(self,df):
+        predictions = self.states[-1]
+        cost = self.cost_function(df.y,predictions)
+        self.costs.append(cost)
+    def train(self,df,max_iterations=5000, step_size=0.05):
+        for i in range(max_iterations):
+            self.forward(df)
+            self.backward(df)
+            self.track_cost(df)
+            self.update(step_size)
 
 
-class data:
-    def __init__(self,x,y):
-        self.x = x
-        self.y = y
-        self.training_x = None
-        self.training_y = None
-        self.validation_x = None
-        self.validation_y = None
+def K1v_Product(weight, n, vector):
+    # Tensor-vector product for eliminating Kronecker product from second derivative
+    matrix = base.to_matrix(vector, weight.shape)
+    matrix = matrix[1:, ]
+    out = np.kron(matrix, np.eye(n))
+    out = base.to_vector(out)
+    return out
 
-    def load_training_data(self,x,y):
-        self.training_x = x
-        self.training_y = y
-
-    def load_validation_data(self,x,y):
-        self.validation_x = x
-        self.validation_y = y
-
-    def test_train_split(self,train_percent=0.8, seed=None):
-        rows = self.x.shape[0]
-        indices = base.generate_random_indices(rows, random_seed=seed)
-        split = int(np.round(rows * train_percent))
-        train_indices = indices[0:split]
-        test_indices = indices[split:]
-        self.training_x = self.x[train_indices]
-        self.training_y = self.y[train_indices]
-        self.validation_x = self.x[test_indices]
-        self.validation_y = self.y[test_indices]
-        self.x = None
-        self.y = None
-
-
-"""The data set of predictor variables"""
-x = np.array([[0.1,0.3,0.1,0.6,0.4,0.6,0.5,0.9,0.4,0.7],
-              [0.1,0.4,0.5,0.9,0.2,0.3,0.6,0.2,0.4,0.6]]).T
-
-
-"""The data set of outcome variables"""
-y = np.array([[1,1,1,1,1,0,0,0,0,0],
-              [0,0,0,0,0,1,1,1,1,1]]).T
-
-"""Define the neural network structure"""
-np.random.seed(100)
-
-df = data(x,y)
-df.test_train_split(train_percent=0.8)
-nnet = neural_network(layers=[2,2,3,2],
-                      activation_functions = [af.sigmoid,af.sigmoid,af.sigmoid],
-                      cost_function=cf.mean_squared_error)
-
-nnet.randomize_weights()
-nnet.forward(df)
-nnet.backward(df)
+def K2v_Product(weight, n, vector):
+    # Tensor-vector product for eliminating Kronecker product from second derivative
+    p = weight.shape[0] - 1
+    q = weight.shape[1]
+    vector = base.to_matrix(vector, (n * p * n, q))
+    P = np.eye(n * p)
+    P = base.to_vector(P)
+    P = base.to_matrix(P, (p, n * n * p))
+    out = P @ vector
+    zero = np.zeros((1, q))
+    out = np.vstack((zero, out))
+    out = base.to_vector(out)
+    return out
