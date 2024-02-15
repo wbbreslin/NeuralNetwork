@@ -17,3 +17,5 @@ nnet = base.create_network(x_predictors,
                            activations = [base.sigmoid,
                                           base.sigmoid,
                                           base.sigmoid])
+
+print(nnet["Weights"][0])

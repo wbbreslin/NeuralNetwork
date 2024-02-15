@@ -13,13 +13,16 @@ x = np.array([[0.1,0.3,0.1,0.6,0.4,0.6,0.5,0.9,0.4,0.7],
 y = np.array([[1,1,1,1,1,0,0,0,0,0],
               [0,0,0,0,0,1,1,1,1,1]]).T
 
-np.random.seed(100)
+#np.random.seed(100)
 
 df = data(x,y)
-training, validation = df.test_train_split(train_percent=0.8)
+training, validation = df.test_train_split(train_percent=1)
 nnet = neural_network(layers=[2,2,3,2],
                          activation_functions = [af.sigmoid,af.sigmoid,af.sigmoid],
                          cost_function=cf.mean_squared_error)
 
 nnet.randomize_weights()
-nnet.train(df, max_iterations = 10000, step_size=0.25)
+print(nnet.weights[0])
+nnet.train(df, max_iterations = 4000, step_size=0.25)
+nnet.compute_hessian()
+

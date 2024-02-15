@@ -11,6 +11,8 @@ class neural_network:
         self.augmented_weights = []
         self.states = []
         self.gradients = []
+        self.hvps = []
+        self.hessian = None
 
         # Cost function
         self.cost_function = cost_function
@@ -76,11 +78,56 @@ class neural_network:
         self.lambdas.reverse()
         self.augmented_weights.reverse()
 
+    def soa_forward(self, vectors):
+        # Forward pass through the tangent-linear model
+        theta = np.zeros(self.states[0].shape)
+        theta = base.to_vector(theta)
+        self.thetas = [theta]
+        self.activation_hessian_matrices = []
+        n = self.augmented_states[0].shape[0]
+
+        for i in range(len(self.augmented_weights)):
+            q = self.augmented_weights[i].shape[1]
+            new_theta = self.activation_jacobian_matrices[i] \
+                        @ np.kron(self.augmented_weights[i].T, np.eye(n)) \
+                        @ self.thetas[i] \
+                        + self.activation_jacobian_matrices[i] \
+                        @ np.kron(np.eye(q), self.augmented_states[i]) \
+                        @ vectors[i]
+            self.thetas.append(new_theta)
+            xw = self.augmented_states[i] @ self.weights[i]
+            xw_vec = base.to_vector(xw)
+            d2 = np.diagflat(self.activation_hessian_functions[i](xw_vec))
+            self.activation_hessian_matrices.append(d2)
+
+    def soa_backward(self, vectors):
+        # Backward pass through the second-order adjoint model
+        n = self.states[0].shape[0]
+        omega = self.thetas[-1]
+        self.omegas = [omega]
+        self.hvps = []
+        for i in reversed(range(len(self.augmented_weights))):
+            q = self.weights[i].shape[1]
+            gradient = np.kron(self.augmented_weights[i], np.eye(n)) @ self.activation_jacobian_matrices[i]
+            Hv = np.kron(np.eye(q), self.augmented_states[i].T) @ self.activation_jacobian_matrices[i] \
+                 @ omega \
+                 + self.Dv_Tensor(vectors, i) \
+                 + self.Cv_Tensor(i)
+            new_omega = gradient @ omega + self.Av_Tensor(i) + self.Bv_Tensor(vectors, i)
+            self.omegas.append(new_omega)
+            dims = self.gradients[i].shape
+            Hv = base.to_matrix(Hv, dims)
+            self.hvps.append(Hv)
+            omega = new_omega
+
+        self.omegas.reverse()
+        self.hvps.reverse()
+
+
     def Av_Tensor(self, i):
-        #Need to save (augmented weights)
         vector = self.thetas[i]
         n = self.augmented_states[0].shape[0]
-        Av = np.kron(self.augmented_states[i], np.eye(n)) \
+        Av = np.kron(self.augmented_weights[i], np.eye(n)) \
              @ np.diagflat(self.lambdas[i+1]) \
              @ self.activation_hessian_matrices[i] \
              @ np.kron(self.augmented_weights[i], np.eye(n)).T \
@@ -140,6 +187,31 @@ class neural_network:
             self.backward(df)
             self.track_cost(df)
             self.update(step_size)
+
+    def compute_hessian(self):
+        elements = [w.size for w in self.weights]
+        partitions = np.append(0, np.cumsum(elements))
+        dimensions = partitions[-1]
+        full_hessian = np.zeros((dimensions, dimensions))
+
+        for i in range(dimensions):
+            vector = np.zeros((dimensions, 1))
+            vectors = []
+            vector[i] = 1
+            for j in range(len(self.weights)):
+                v = vector[partitions[j]:partitions[j + 1]]
+                vectors.append(v)
+            self.soa_forward(vectors)
+            self.soa_backward(vectors)
+            columns = []
+            for k in range(len(self.weights)):
+                hvp = base.to_vector(self.hvps[k])
+                columns.append(hvp)
+            column_hessian = columns[0]
+            for c in range(len(columns) - 1):
+                column_hessian = np.vstack((column_hessian, columns[c + 1]))
+            full_hessian[:, i] = column_hessian[:, 0]
+        self.hessian = full_hessian
 
 
 def K1v_Product(weight, n, vector):
