@@ -13,6 +13,7 @@ class neural_network:
         self.gradients = []
         self.hvps = []
         self.hessian = None
+        self.gradient_vector = None
 
         # Cost function
         self.cost_function = cost_function
@@ -187,6 +188,14 @@ class neural_network:
             self.backward(df)
             self.track_cost(df)
             self.update(step_size)
+
+    def compute_gradient(self):
+        self.gradient_vector = [[1]]
+        for g in self.gradients:
+            gradient = base.to_vector(g)
+            self.gradient_vector = np.vstack((self.gradient_vector, gradient))
+        self.gradient_vector = self.gradient_vector[1:]
+
 
     def compute_hessian(self):
         elements = [w.size for w in self.weights]

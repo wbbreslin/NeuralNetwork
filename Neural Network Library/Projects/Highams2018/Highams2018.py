@@ -18,11 +18,16 @@ y = np.array([[1,1,1,1,1,0,0,0,0,0],
 df = data(x,y)
 training, validation = df.test_train_split(train_percent=1)
 nnet = neural_network(layers=[2,2,3,2],
-                         activation_functions = [af.sigmoid,af.sigmoid,af.sigmoid],
+                         activation_functions = [af.sigmoid,
+                                                 af.sigmoid,
+                                                 af.sigmoid],
                          cost_function=cf.mean_squared_error)
 
 nnet.randomize_weights()
-print(nnet.weights[0])
 nnet.train(df, max_iterations = 4000, step_size=0.25)
 nnet.compute_hessian()
+nnet.compute_gradient()
 
+
+print(nnet.gradient_vector)
+print(nnet.gradients[0])
