@@ -25,9 +25,20 @@ nnet = neural_network(layers=[2,2,3,2],
 
 nnet.randomize_weights()
 nnet.train(df, max_iterations = 4000, step_size=0.25)
+
+
+# Sensitivity Analysis
 nnet.compute_hessian()
 nnet.compute_gradient()
+eta = np.linalg.inv(nnet.hessian_matrix) @ nnet.gradient_vector
 
+nnet.backward_hyperparameter_derivative(df)
+n = df.x.shape[0]
+array = list(range(n**2))
+index = [array[i] for i in range(len(array)) if i % (n+1) == 0]
 
-print(nnet.gradient_vector)
-print(nnet.gradients[0])
+total_dJ = np.hstack(nnet.dJ)
+total_dJ = total_dJ[index,:]
+
+sensitivity = total_dJ @ eta
+print(sensitivity)

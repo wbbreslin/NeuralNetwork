@@ -12,7 +12,7 @@ class neural_network:
         self.states = []
         self.gradients = []
         self.hvps = []
-        self.hessian = None
+        self.hessian_matrix = None
         self.gradient_vector = None
 
         # Cost function
@@ -78,6 +78,31 @@ class neural_network:
         self.gradients.reverse()
         self.lambdas.reverse()
         self.augmented_weights.reverse()
+
+    def backward_hyperparameter_derivative(self, data):
+        n = self.states[-1].shape[0]
+        dλ = np.kron(self.states[-1] - data.y,np.eye(n))
+        #self.dL = [dλ]
+        self.dJ = []
+
+        for i in reversed(range(len(self.activation_functions))):
+            p = self.layers[i+1]
+            no_bias_weight = self.weights[i][1:,:]
+
+            gradient = dλ \
+                       @ self.activation_jacobian_matrices[i] \
+                       @ np.kron(np.eye(p),self.augmented_states[i]) \
+
+            new_dλ = dλ \
+                    @ self.activation_jacobian_matrices[i] \
+                    @ np.kron(no_bias_weight.T, np.eye(n))
+
+            #gradient = base.to_matrix(gradient, self.weights[i].shape)
+            self.dJ.append(gradient)
+            #self.dL.append(new_dλ)
+            dλ = new_dλ
+
+        self.dJ.reverse()
 
     def soa_forward(self, vectors):
         # Forward pass through the tangent-linear model
@@ -220,7 +245,7 @@ class neural_network:
             for c in range(len(columns) - 1):
                 column_hessian = np.vstack((column_hessian, columns[c + 1]))
             full_hessian[:, i] = column_hessian[:, 0]
-        self.hessian = full_hessian
+        self.hessian_matrix = full_hessian
 
 
 def K1v_Product(weight, n, vector):
