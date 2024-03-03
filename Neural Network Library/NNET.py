@@ -12,6 +12,7 @@ class neural_network:
         self.states = []
         self.gradients = []
         self.hvps = []
+        self.predictions = None
         self.hessian_matrix = None
         self.gradient_vector = None
 
@@ -36,7 +37,7 @@ class neural_network:
     def randomize_weights(self):
         self.weights = []
         for i in range(len(self.activation_functions)):
-            self.weights.append(np.random.rand(self.layers[i]+1,self.layers[i+1]))
+            self.weights.append(0.5*np.random.rand(self.layers[i]+1,self.layers[i+1]))
 
     def forward(self,data):
         self.states = [data.x]
@@ -49,6 +50,18 @@ class neural_network:
             z = self.augmented_states[i] @ self.weights[i]
             self.states.append(self.activation_functions[i](z))
             self.activation_jacobian_matrices.append(np.diagflat(base.to_vector(self.activation_jacobian_functions[i](z))))
+
+    def predict(self,data):
+        states = [data.x]
+        augmented_states = []
+
+        for i in range(len(self.activation_functions)):
+            ones_column = np.ones((states[i].shape[0], 1))
+            augmented_states.append(np.hstack((ones_column, states[i])))
+            z = augmented_states[i] @ self.weights[i]
+            states.append(self.activation_functions[i](z))
+
+        self.predictions = states[-1]
 
     def backward(self,data):
         n = self.states[-1].shape[0]
