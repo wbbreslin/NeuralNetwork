@@ -16,8 +16,6 @@ x = ordered_pair_matrix(0,1,0.01)
 df = data(x,y=None)
 nnet.predict(df)
 df.y = np.round(nnet.predictions)
-print(df.x.shape)
-print(df.y.shape)
 
 xx = hig.x
 yy = hig.y
@@ -27,20 +25,36 @@ x_y0 = df.x[(df.y[:, 0] == 1) & (df.y[:, 1] == 0)]
 x_y1 = df.x[(df.y[:, 0] == 0) & (df.y[:, 1] == 1)]
 
 # Create a scatterplot for Y=0 points
-plt.scatter(x_y0[:, 0], x_y0[:, 1], c='bisque', label='Predicted Failure', marker='s')
+predicted_failure = plt.scatter(x_y0[:, 0], x_y0[:, 1], c='bisque', label='Predicted Failure', marker='s')
 
 # Create a scatterplot for Y=1 points
-plt.scatter(x_y1[:, 0], x_y1[:, 1], c='palegreen', label='Predicted Success', marker='s')
+predicted_success = plt.scatter(x_y1[:, 0], x_y1[:, 1], c='palegreen', label='Predicted Success', marker='s')
+
+# Plot the validation data
+xv = hig.x_validation
+yv = hig.y_validation
+
+#vF = plt.scatter(xv[0:2, 0], xv[0:2, 1],  marker='x', s=10, color = 'red', label = 'Validation Data - Failure')
+#vS = plt.scatter(xv[2:4, 0], xv[2:4, 1], marker='o', s=10, color = 'red', label = 'Validation Data - Success')
 
 # Set color of points based on sensitivity values
 color_vector = abs(sensitivity)
-cmap = plt.get_cmap('PuOr')
+cmap = plt.get_cmap('Greys')
 
 # Scatterplot for original data
-plt.scatter(xx[0:5, 0], xx[0:5, 1], label='Failure', marker='x', s=75, c = color_vector[0:5], cmap = cmap)
-plt.scatter(xx[5:10, 0], xx[5:10, 1], c = color_vector[5:10], label='Success', marker='o', s=75, cmap = cmap)
+scatter_failure = plt.scatter(xx[0:5, 0], xx[0:5, 1], label='Failure', marker='s', s=75, c = color_vector[0:5], cmap = cmap, edgecolor = "black")
+scatter_success = plt.scatter(xx[5:10, 0], xx[5:10, 1], c = color_vector[5:10], label='Success', marker='o', s=75, cmap = cmap, edgecolor = "black")
+
 
 cbar = plt.colorbar()
+
 cbar.set_label('Sensitivity')
 plt.title('Forecast Sensitivity to Data Removal')
+# Create proxy artists for the legend with black edge and fill colors
+legend_failure = plt.Line2D([0], [0], marker='s', color='black', markerfacecolor='black', markersize=10, label='Failure', linestyle='None')
+legend_success = plt.Line2D([0], [0], marker='o', color='black', markerfacecolor='black', markersize=10, label='Success', linestyle='None')
+
+
+# Add the proxy artists to the legend without affecting the actual points
+plt.legend(handles=[predicted_failure, predicted_success, legend_failure, legend_success], loc=2)
 plt.show()

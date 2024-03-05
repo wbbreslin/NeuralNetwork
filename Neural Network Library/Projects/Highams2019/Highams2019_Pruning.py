@@ -20,8 +20,19 @@ nnet = base.create_network(x_predictors,
                                           base.sigmoid,
                                           base.sigmoid])
 
-nnet = prune.iterative_prune(nnet,itr=29, remove=1)
+iterations = 30
+nnet = prune.iterative_prune(nnet,itr=iterations, remove=1)
+#nnet = prune.iterative_prune(nnet,itr=30, remove=1)
+
+xvline = [4000 * (i + 1) for i in range(iterations)]
 
 plt.plot(np.log(nnet['Cost']))
-plt.plot(nnet['Cost'])
+plt.xlabel("Iterations")
+plt.ylabel("Log Cost")
+plt.title("Effect of Network Pruning on Cost Function")
+
+for xv in xvline:
+    plt.axvline(xv,linestyle='--', dashes = (5,180), color='black')
+
+
 plt.show()

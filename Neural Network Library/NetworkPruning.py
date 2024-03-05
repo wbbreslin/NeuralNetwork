@@ -52,11 +52,12 @@ def saliency(nnet):
     vec_weights = [base.to_vector(w) for w in weights]
     vec_weights = np.vstack(vec_weights)
     hessian = hessian_matrix(nnet)
-    inverse_hessian = np.linalg.inv(hessian)
-    diagonals = np.array(np.diag(inverse_hessian))
-    diagonals = diagonals.reshape((len(vec_weights),1))
-    saliency_statistic = vec_weights**2 / (2 * abs(diagonals))
-    return saliency_statistic
+    if np.linalg.det(hessian) != 0:
+        inverse_hessian = np.linalg.inv(hessian)
+        diagonals = np.array(np.diag(inverse_hessian))
+        diagonals = diagonals.reshape((len(vec_weights),1))
+        saliency_statistic = vec_weights**2 / (2 * abs(diagonals))
+        return saliency_statistic
 
 def hessian_matrix(nnet):
     weights = nnet['Weights']
