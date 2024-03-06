@@ -2,7 +2,6 @@ import numpy as np
 import Highams2018 as hig
 import matplotlib.pyplot as plt
 from Data import data
-from Highams2018_FSO import sensitivity
 
 def ordered_pair_matrix(start, end, step):
     x = np.arange(start, end + step, step)

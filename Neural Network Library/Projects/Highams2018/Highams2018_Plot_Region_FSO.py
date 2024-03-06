@@ -3,6 +3,7 @@ import Highams2018 as hig
 import matplotlib.pyplot as plt
 from Data import data
 from Highams2018_FSO import sensitivity
+from matplotlib.colors import LinearSegmentedColormap
 
 def ordered_pair_matrix(start, end, step):
     x = np.arange(start, end + step, step)
@@ -38,12 +39,23 @@ yv = hig.y_validation
 #vS = plt.scatter(xv[2:4, 0], xv[2:4, 1], marker='o', s=10, color = 'red', label = 'Validation Data - Success')
 
 # Set color of points based on sensitivity values
-color_vector = abs(sensitivity)
-cmap = plt.get_cmap('Greys')
+#color_vector = abs(sensitivity)
+
+def grayscale_diverging_cmap():
+    cmap = LinearSegmentedColormap.from_list(
+        'grayscale_diverging', [(0, 'black'), (0.5, 'white'), (1, 'black')], N=256
+    )
+    return cmap
+
+color_vector = sensitivity
+print(sensitivity)
+#cmap = grayscale_diverging_cmap()
+cmap = plt.get_cmap('seismic')
+vmax = np.max(np.abs(color_vector))
 
 # Scatterplot for original data
-scatter_failure = plt.scatter(xx[0:5, 0], xx[0:5, 1], label='Failure', marker='s', s=75, c = color_vector[0:5], cmap = cmap, edgecolor = "black")
-scatter_success = plt.scatter(xx[5:10, 0], xx[5:10, 1], c = color_vector[5:10], label='Success', marker='o', s=75, cmap = cmap, edgecolor = "black")
+scatter_failure = plt.scatter(xx[0:5, 0], xx[0:5, 1], label='Failure', marker='s', s=75, c = color_vector[0:5], cmap = cmap, edgecolor = "black",vmin=-vmax,vmax= vmax)
+scatter_success = plt.scatter(xx[5:10, 0], xx[5:10, 1], c = color_vector[5:10], label='Success', marker='o', s=75, cmap = cmap, edgecolor = "black",vmin=-vmax,vmax= vmax)
 
 
 cbar = plt.colorbar()

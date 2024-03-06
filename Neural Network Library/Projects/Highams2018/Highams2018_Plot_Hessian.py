@@ -17,3 +17,9 @@ plt.xlabel('Weight Parameter ID (23 parameters)')
 plt.ylabel('Weight Parameter ID (23 parameters)')
 plt.title('Hessian Matrix: ' + str(8000) + ' Iterations')
 plt.show()
+
+def is_pos_def(x):
+    return np.all(np.linalg.eigvals(x) > 0)
+
+pd = is_pos_def(full_hessian)
+print(pd)

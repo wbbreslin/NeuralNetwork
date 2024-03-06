@@ -20,19 +20,52 @@ nnet = base.create_network(x_predictors,
                                           base.sigmoid,
                                           base.sigmoid])
 
-iterations = 30
+
+iterations = 31
 nnet = prune.iterative_prune(nnet,itr=iterations, remove=1)
-#nnet = prune.iterative_prune(nnet,itr=30, remove=1)
 
-xvline = [4000 * (i + 1) for i in range(iterations)]
+z = np.log(nnet['Cost'])
 
-plt.plot(np.log(nnet['Cost']))
-plt.xlabel("Iterations")
-plt.ylabel("Log Cost")
+#xvline = [4000 * (i + 1) for i in range(iterations)]
+
+fig = plt.figure()
+ax1 = fig.add_subplot(111)
+ax1.set_xlim((0,(iterations+1)*4000))
+ax1.plot(z)
+#ax1_ticks = list(range(0,(iterations+2)*4000,4000))
+#ax1.set_xticks(ax1_ticks)
+ax2 = ax1.twiny()
+ax2.set_xlim((0,(iterations+1)))
+ax2_ticks = list(range(0,(iterations+1),1))
+ax2.set_xticks(ax2_ticks)
+
+ax1.set_xlabel("Training Iterations")
+ax2.set_xlabel("Pruning Iterations")
+
+ax1.set_ylabel("Log Cost")
 plt.title("Effect of Network Pruning on Cost Function")
+
+'''
+x_regular = list(range(len(nnet['Cost'])))
+x_modified = list(range(iterations))
+print(x_modified)
+ax1.plot(x_regular,z)
+ax1_ticks = list(range(0,(iterations+2)*4000,4000))
+print(len(z))
+print(ax1_ticks)
+#ax1.set_xticks(ax1_ticks)
+ax2.set_xlim(ax1.get_xlim())
+'''
+
+'''
+fig = plt.plot(np.log(nnet['Cost']))
+plt.xlabel("Iterations")
+
 
 for xv in xvline:
     plt.axvline(xv,linestyle='--', dashes = (5,180), color='black')
+'''
+
 
 
 plt.show()
