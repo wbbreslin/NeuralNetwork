@@ -94,28 +94,29 @@ class neural_network:
 
     def backward_hyperparameter_derivative(self, data):
         n = self.states[-1].shape[0]
-        dλ = np.kron(self.states[-1] - data.y,np.eye(n))
-        #self.dL = [dλ]
-        self.dJ = []
+        self.dJ =[]
+        for j in range(n):
+            dλ = base.unit_matrix(j,n) @ (self.states[-1] - data.y)
+            dλ = base.to_vector(dλ)
+            current_dJ = []
 
-        for i in reversed(range(len(self.activation_functions))):
-            p = self.layers[i+1]
-            no_bias_weight = self.weights[i][1:,:]
+            for i in reversed(range(len(self.activation_functions))):
+                p = self.layers[i+1]
+                no_bias_weight = self.weights[i][1:,:]
 
-            gradient = dλ \
-                       @ self.activation_jacobian_matrices[i] \
-                       @ np.kron(np.eye(p),self.augmented_states[i]) \
+                gradient = dλ.T \
+                           @ self.activation_jacobian_matrices[i] \
+                           @ np.kron(np.eye(p),self.augmented_states[i])
 
-            new_dλ = dλ \
-                    @ self.activation_jacobian_matrices[i] \
-                    @ np.kron(no_bias_weight.T, np.eye(n))
-
-            #gradient = base.to_matrix(gradient, self.weights[i].shape)
-            self.dJ.append(gradient)
-            #self.dL.append(new_dλ)
-            dλ = new_dλ
-
-        self.dJ.reverse()
+                new_dλ = (dλ.T \
+                        @ self.activation_jacobian_matrices[i] \
+                        @ np.kron(no_bias_weight.T, np.eye(n))).T
+                dλ = new_dλ
+                current_dJ.append(gradient)
+            current_dJ.reverse()
+            current_dJ = np.hstack(current_dJ)
+            self.dJ.append(current_dJ)
+        self.dJ = np.vstack(self.dJ)
 
     def soa_forward(self, vectors):
         # Forward pass through the tangent-linear model

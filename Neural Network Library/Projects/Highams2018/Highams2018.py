@@ -38,3 +38,6 @@ nnet.train(training, max_iterations = 10000, step_size=0.25)
 
 '''Make copy of trained network for validation functional'''
 nnet_copy = copy.deepcopy(nnet)
+
+
+nnet.backward_hyperparameter_derivative(training)

@@ -195,3 +195,13 @@ def weights_to_parameter_vector(weights):
     vectorized_weights = [to_vector(w) for w in weights]
     vec = np.vstack(vectorized_weights)
     return(vec)
+
+def unit_vector(i,n):
+    v = np.zeros((n,1))
+    v[i] = 1
+    return v
+
+def unit_matrix(i,n):
+    m = np.zeros((n,n))
+    m[i,i] = 1
+    return(m)
