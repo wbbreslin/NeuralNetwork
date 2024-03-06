@@ -20,22 +20,21 @@ y_validation = np.array([[0,0,1,1],
 
 
 '''Define the model'''
-np.random.seed(100)
+#np.random.seed(100)
 training = data(x,y)
 validation = data(x_validation,y_validation)
 nnet = neural_network(layers=[2,2,3,2],
                          activation_functions = [af.sigmoid,
                                                  af.sigmoid,
                                                  af.sigmoid],
-                         cost_function=cf.mean_squared_error)
+                         cost_function=cf.half_SSE)
 nnet.randomize_weights()
 
 '''Make copy of untrained network for OSE'''
 nnet_OSE_ref = copy.deepcopy(nnet)
 
 '''Train the network'''
-nnet.train(training, max_iterations = 8000, step_size=0.25)
+nnet.train(training, max_iterations = 10000, step_size=0.25)
 
 '''Make copy of trained network for validation functional'''
 nnet_copy = copy.deepcopy(nnet)
-

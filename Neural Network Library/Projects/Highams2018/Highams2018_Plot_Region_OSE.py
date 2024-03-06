@@ -2,7 +2,7 @@ import numpy as np
 import Highams2018 as hig
 import matplotlib.pyplot as plt
 from Data import data
-from Highams2018_FSO import sensitivity
+from Highams2018_OSE import OSE
 from matplotlib.colors import LinearSegmentedColormap
 
 def ordered_pair_matrix(start, end, step):
@@ -47,7 +47,7 @@ def grayscale_diverging_cmap():
     )
     return cmap
 
-color_vector = sensitivity
+color_vector = OSE
 #cmap = grayscale_diverging_cmap()
 cmap = plt.get_cmap('seismic')
 vmax = np.max(np.abs(color_vector))
