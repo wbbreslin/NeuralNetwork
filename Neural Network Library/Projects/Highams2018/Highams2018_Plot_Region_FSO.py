@@ -70,3 +70,4 @@ legend_success = plt.Line2D([0], [0], marker='o', color='black', markerfacecolor
 plt.legend(handles=[predicted_failure, predicted_success, legend_failure, legend_success], loc=2)
 plt.show()
 
+print(np.round(hig.nnet.states[-1],2))

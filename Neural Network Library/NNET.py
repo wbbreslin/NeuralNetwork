@@ -34,6 +34,8 @@ class neural_network:
         self.thetas = []
         self.omegas = []
 
+        self.randomize_weights()
+
     def randomize_weights(self):
         self.weights = []
         for i in range(len(self.activation_functions)):
@@ -108,9 +110,10 @@ class neural_network:
                            @ self.activation_jacobian_matrices[i] \
                            @ np.kron(np.eye(p),self.augmented_states[i])
 
-                new_dλ = (dλ.T \
-                        @ self.activation_jacobian_matrices[i] \
+                new_dλ = (dλ.T
+                        @ self.activation_jacobian_matrices[i]
                         @ np.kron(no_bias_weight.T, np.eye(n))).T
+
                 dλ = new_dλ
                 current_dJ.append(gradient)
             current_dJ.reverse()

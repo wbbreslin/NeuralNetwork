@@ -35,4 +35,3 @@ def hessian(nnet):
 
 full_hessian = hessian(nnet)
 det = np.linalg.det(full_hessian)
-print(det)

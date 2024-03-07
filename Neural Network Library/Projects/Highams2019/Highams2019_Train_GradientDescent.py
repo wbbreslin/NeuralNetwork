@@ -4,4 +4,3 @@ import copy
 
 nnet = copy.deepcopy(data.nnet)
 nnet = train.gradient_descent(nnet, max_iterations=4000)
-print(nnet["First_Derivatives"][0])
