@@ -16,36 +16,30 @@ y = np.array([[1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
 
 
 '''Define the model'''
-#np.random.seed(333)
+np.random.seed(333)
 training = data(x, y)
-
 nnet = neural_network(layers=[2, 2, 3, 2],
                       activation_functions=[af.sigmoid,
                                             af.sigmoid,
                                             af.sigmoid],
                       cost_function=cf.half_SSE)
 
-'''Make copy of untrained network for OSE'''
-nnet_OSE_ref = copy.deepcopy(nnet)
 
 '''Train the network'''
-itr1 = 6000;
+itr1 = 6000
 step1 = 0.25
-itr2 = 4000;
+itr2 = 4000
 step2 = 0.05
 nnet.train(training, max_iterations=itr1, step_size=0.25)
 nnet.train(training, max_iterations=itr2, step_size=0.05)
 
-'''Make copy of trained network for validation functional'''
-nnet_copy = copy.deepcopy(nnet)
-nnet_FSO_copy = copy.deepcopy(nnet)
+'''Make copies of trained network for FDM'''
 nnet_FDM = copy.deepcopy(nnet)
 
-nnet.compute_gradient()
+'''Compute Hessian using SOA Model'''
 nnet.compute_hessian()
-nnet.backward_hyperparameter_derivative(training)
 
-'''FDM Hessian'''
+'''Finite-Difference Approximation of the Hessian'''
 nnet_plus = copy.deepcopy(nnet_FDM)
 nnet_minus = copy.deepcopy(nnet_FDM)
 epsilon = 10 ** -6
@@ -86,53 +80,62 @@ for u in range(len(nnet.weights)):
         Hessians.append(Hessian)
 
 H = Hessians
-full_hessian = np.bmat([[H[0], H[1], H[2]],
+hessian_FDM = np.bmat([[H[0], H[1], H[2]],
                         [H[3], H[4], H[5]],
                         [H[6], H[7], H[8]]])
 
-print(full_hessian - nnet.hessian_matrix)
 
-second_hessian = nnet.hessian_matrix
-difference_hessian = full_hessian - second_hessian
+'''Plot the Hessian Matrices and the errors'''
+hessian_SOA = nnet.hessian_matrix
+error_FDM = hessian_FDM - hessian_SOA
 
 # Calculate bounds for color scaling
-min_full = np.abs(np.min(full_hessian))
-max_full = np.abs(np.max(full_hessian))
+min_full = np.abs(np.min(hessian_SOA))
+max_full = np.abs(np.max(hessian_SOA))
 bound_full = np.max((min_full, max_full))
 
-min_second = np.abs(np.min(second_hessian))
-max_second = np.abs(np.max(second_hessian))
+min_second = np.abs(np.min(hessian_FDM))
+max_second = np.abs(np.max(hessian_FDM))
 bound_second = np.max((min_second, max_second))
 
-min_difference = np.abs(np.min(difference_hessian))
-max_difference = np.abs(np.max(difference_hessian))
+min_difference = np.abs(np.min(error_FDM))
+max_difference = np.abs(np.max(error_FDM))
 bound_difference = np.max((min_difference, max_difference))
 
-# Create subplots with 1 row and 3 columns
-figure, axes = plt.subplots(1, 3, figsize=(18, 6))
+# Create the plots
+figure, axes = plt.subplots(2, 2, figsize=(18, 6))
 
-# Plot the first heatmap (full_hessian) on the left subplot
-im1 = axes[0].imshow(full_hessian, cmap='seismic', vmin=-bound_full, vmax=bound_full)
-axes[0].set_xlabel('Weight Parameter ID (23 parameters)')
-axes[0].set_ylabel('Weight Parameter ID (23 parameters)')
-axes[0].set_title('Full Hessian')
+#axes[0, 0].plot(nnet.costs)
+#axes[0, 0].set_title('Costs')
+#axes[0, 0].set_xlabel('Iteration')
+#axes[0, 0].set_ylabel('Cost')
 
-# Plot the second heatmap (second_hessian) in the middle subplot
-im2 = axes[1].imshow(second_hessian, cmap='seismic', vmin=-bound_second, vmax=bound_second)
-axes[1].set_xlabel('Weight Parameter ID (23 parameters)')
-axes[1].set_ylabel('Weight Parameter ID (23 parameters)')
-axes[1].set_title('Second Hessian')
+im0 = axes[0,0].imshow(hessian_SOA, cmap='seismic', vmin=-bound_full, vmax=bound_full)
+axes[0,0].set_xlabel('Weight Parameter ID (23 parameters)')
+axes[0,0].set_ylabel('Weight Parameter ID (23 parameters)')
+axes[0,0].set_title('Hessian Matrix - SOA')
 
-# Plot the third heatmap (difference_hessian) on the right subplot
-im3 = axes[2].imshow(difference_hessian, cmap='seismic', vmin=-bound_difference, vmax=bound_difference)
-axes[2].set_xlabel('Weight Parameter ID (23 parameters)')
-axes[2].set_ylabel('Weight Parameter ID (23 parameters)')
-axes[2].set_title('Difference Hessian')
+im1 = axes[0,1].imshow(hessian_SOA, cmap='seismic', vmin=-bound_full, vmax=bound_full)
+axes[0,1].set_xlabel('Weight Parameter ID (23 parameters)')
+axes[0,1].set_ylabel('Weight Parameter ID (23 parameters)')
+axes[0,1].set_title('Hessian Matrix - SOA')
 
-# Add colorbars to each subplot
-cbar1 = figure.colorbar(im1, ax=axes[0])
-cbar2 = figure.colorbar(im2, ax=axes[1])
-cbar3 = figure.colorbar(im3, ax=axes[2])
+im2 = axes[1,0].imshow(hessian_FDM, cmap='seismic', vmin=-bound_second, vmax=bound_second)
+axes[1,0].set_xlabel('Weight Parameter ID (23 parameters)')
+axes[1,0].set_ylabel('Weight Parameter ID (23 parameters)')
+axes[1,0].set_title('Hessian Matrix - FDM')
 
-# Show the plot
+im3 = axes[1,1].imshow(error_FDM, cmap='seismic', vmin=-bound_difference, vmax=bound_difference)
+axes[1,1].set_xlabel('Weight Parameter ID (23 parameters)')
+axes[1,1].set_ylabel('Weight Parameter ID (23 parameters)')
+axes[1,1].set_title('FDM Error')
+
+cbar1 = figure.colorbar(im1, ax=axes[0,1])
+cbar2 = figure.colorbar(im2, ax=axes[1,0])
+cbar3 = figure.colorbar(im3, ax=axes[1,1])
+
+plt.tight_layout()
 plt.show()
+
+nnet.backward_hyperparameter_derivative(training)
+print(nnet.dS.shape)

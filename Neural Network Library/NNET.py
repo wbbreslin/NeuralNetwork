@@ -96,11 +96,11 @@ class neural_network:
 
     def backward_hyperparameter_derivative(self, data):
         n = self.states[-1].shape[0]
-        self.dJ =[]
+        self.dS =[]
         for j in range(n):
             dλ = base.unit_matrix(j,n) @ (self.states[-1] - data.y)
             dλ = base.to_vector(dλ)
-            current_dJ = []
+            current_dS = []
 
             for i in reversed(range(len(self.activation_functions))):
                 p = self.layers[i+1]
@@ -115,11 +115,11 @@ class neural_network:
                         @ np.kron(no_bias_weight.T, np.eye(n))).T
 
                 dλ = new_dλ
-                current_dJ.append(gradient)
-            current_dJ.reverse()
-            current_dJ = np.hstack(current_dJ)
-            self.dJ.append(current_dJ)
-        self.dJ = np.vstack(self.dJ)
+                current_dS.append(gradient)
+            current_dS.reverse()
+            current_dS = np.hstack(current_dS)
+            self.dS.append(current_dS)
+        self.dS = np.vstack(self.dS)
 
     def soa_forward(self, vectors):
         # Forward pass through the tangent-linear model

@@ -22,3 +22,6 @@ nnet_validation.compute_gradient()
 eta = np.linalg.inv(nnet.hessian_matrix) @ nnet_validation.gradient_vector
 sensitivity = nnet.dJ @ eta
 print(sensitivity)
+
+plt.plot(sensitivity)
+plt.show()
