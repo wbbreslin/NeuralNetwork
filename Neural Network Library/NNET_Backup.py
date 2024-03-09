@@ -2,8 +2,7 @@ import Base as base
 import numpy as np
 import ActivationFunctions as af
 class neural_network:
-    def __init__(self, layers, activation_functions, cost_function,
-                 validation_function=None, regularization = 0):
+    def __init__(self, layers, activation_functions, cost_function, validation_function=None):
 
         # Activation functions and the derivative functions
         self.activation_functions = activation_functions
@@ -18,7 +17,6 @@ class neural_network:
         self.cost_function = cost_function
         self.costs = []
         self.validation_function = validation_function
-        self.regularization = regularization
 
         # Initialize random weights
         self.layers = layers
@@ -40,7 +38,7 @@ class neural_network:
         self.omegas = []
         self.hvps = []
         self.hessian_matrix = None
-        self.dSW = None
+        self.dS = None
 
         #Validation variables
 
@@ -66,13 +64,12 @@ class neural_network:
             z = augmented_states[i] @ self.weights[i]
             states.append(self.activation_functions[i](z))
 
-        data.predictions = states[-1]
+        self.predictions = states[-1]
 
     def backward(self,data):
         n = self.states[-1].shape[0]
-        adjoint = data.s * (self.states[-1] - data.y)
-        adjoint = base.to_vector(adjoint)
-        self.lambdas = [adjoint]
+        λ = base.to_vector(self.states[-1] - data.y)
+        self.lambdas = [λ]
         self.gradients = []
         self.augmented_weights = []
 
@@ -82,20 +79,17 @@ class neural_network:
 
             gradient = np.kron(np.eye(p),self.augmented_states[i]).T \
                        @ self.activation_jacobian_matrices[i] \
-                       @ adjoint
+                       @ λ
 
             new_lambda = np.kron(no_bias_weight, np.eye(n)) \
                     @ self.activation_jacobian_matrices[i] \
-                    @ adjoint
+                    @ λ
 
             gradient = base.to_matrix(gradient, self.weights[i].shape)
-            remove_bias = np.ones(gradient.shape)
-            remove_bias[0,:] = 0
-            gradient = gradient + self.weights[i]*remove_bias * self.regularization
             self.gradients.append(gradient)
             self.lambdas.append(new_lambda)
             self.augmented_weights.append(no_bias_weight)
-            adjoint = new_lambda
+            λ = new_lambda
 
         self.gradients.reverse()
         self.lambdas.reverse()
@@ -103,11 +97,11 @@ class neural_network:
 
     def backward_hyperparameter_derivative(self, data):
         n = self.states[-1].shape[0]
-        self.dSW =[]
+        self.dS =[]
         for j in range(n):
             dλ = base.unit_matrix(j,n) @ (self.states[-1] - data.y)
             dλ = base.to_vector(dλ)
-            current_dSW = []
+            current_dS = []
 
             for i in reversed(range(len(self.activation_functions))):
                 p = self.layers[i+1]
@@ -122,11 +116,12 @@ class neural_network:
                         @ np.kron(no_bias_weight.T, np.eye(n))).T
 
                 dλ = new_dλ
-                current_dSW.append(gradient)
-            current_dSW.reverse()
-            current_dSW = np.hstack(current_dSW)
-            self.dSW.append(current_dSW)
-        self.dSW = np.vstack(self.dSW)
+                current_dS.append(gradient)
+            current_dS.reverse()
+            print([x.shape for x in current_dS])
+            current_dS = np.hstack(current_dS)
+            self.dS.append(current_dS)
+        self.dS = np.vstack(self.dS)
 
     def soa_forward(self, vectors):
         # Forward pass through the tangent-linear model
@@ -227,14 +222,10 @@ class neural_network:
         for i in range(len(self.weights)):
             self.weights[i] = self.weights[i] - step_size * self.gradients[i]
 
-    def track_cost(self,df):
+    def track_cost(self,df,s=None):
         predictions = self.states[-1]
-        cost = self.cost_function(df.y,predictions,df.s)
-        reg = [np.linalg.norm(w)**2 for w in self.augmented_weights]
-        reg = np.sum(reg) / 2 * self.regularization
-        cost = cost + reg
+        cost = self.cost_function(df.y,predictions,s)
         self.costs.append(cost)
-
     def train(self,df,max_iterations=5000, step_size=0.05):
         for i in range(max_iterations):
             self.forward(df)
@@ -246,6 +237,7 @@ class neural_network:
         self.gradient_vector = [[1]]
         for g in self.gradients:
             gradient = base.to_vector(g)
+            print(gradient.shape)
             self.gradient_vector = np.vstack((self.gradient_vector, gradient))
         self.gradient_vector = self.gradient_vector[1:]
 
@@ -273,8 +265,7 @@ class neural_network:
             for c in range(len(columns) - 1):
                 column_hessian = np.vstack((column_hessian, columns[c + 1]))
             full_hessian[:, i] = column_hessian[:, 0]
-        reg_matrix = np.eye(dimensions) * self.regularization
-        self.hessian_matrix = full_hessian + reg_matrix #need to actually put this in Hvp code
+        self.hessian_matrix = full_hessian
 
 
 def K1v_Product(weight, n, vector):

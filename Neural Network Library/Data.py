@@ -2,9 +2,11 @@ import Base as base
 import numpy as np
 
 class data:
-    def __init__(self,x,y):
-        self.x = x
-        self.y = y
+    def __init__(self,x,y,s=1):
+        self.x = x #data matrix
+        self.y = y #data matrix
+        self.s = s #hyperparameter vector
+        self.predictions = None
 
     def test_train_split(self,train_percent=0.8, seed=None):
         if train_percent < 1:

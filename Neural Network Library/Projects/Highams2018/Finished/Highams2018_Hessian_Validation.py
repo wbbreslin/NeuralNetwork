@@ -30,6 +30,7 @@ itr1 = 6000
 step1 = 0.25
 itr2 = 4000
 step2 = 0.05
+
 nnet.train(training, max_iterations=itr1, step_size=0.25)
 nnet.train(training, max_iterations=itr2, step_size=0.05)
 
@@ -105,15 +106,10 @@ bound_difference = np.max((min_difference, max_difference))
 # Create the plots
 figure, axes = plt.subplots(2, 2, figsize=(18, 6))
 
-#axes[0, 0].plot(nnet.costs)
-#axes[0, 0].set_title('Costs')
-#axes[0, 0].set_xlabel('Iteration')
-#axes[0, 0].set_ylabel('Cost')
-
-im0 = axes[0,0].imshow(hessian_SOA, cmap='seismic', vmin=-bound_full, vmax=bound_full)
-axes[0,0].set_xlabel('Weight Parameter ID (23 parameters)')
-axes[0,0].set_ylabel('Weight Parameter ID (23 parameters)')
-axes[0,0].set_title('Hessian Matrix - SOA')
+axes[0, 0].plot(nnet.costs)
+axes[0, 0].set_title('Costs')
+axes[0, 0].set_xlabel('Iteration')
+axes[0, 0].set_ylabel('Cost')
 
 im1 = axes[0,1].imshow(hessian_SOA, cmap='seismic', vmin=-bound_full, vmax=bound_full)
 axes[0,1].set_xlabel('Weight Parameter ID (23 parameters)')
@@ -136,6 +132,3 @@ cbar3 = figure.colorbar(im3, ax=axes[1,1])
 
 plt.tight_layout()
 plt.show()
-
-nnet.backward_hyperparameter_derivative(training)
-print(nnet.dS.shape)
