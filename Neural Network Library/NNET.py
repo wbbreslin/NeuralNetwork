@@ -91,7 +91,8 @@ class neural_network:
             gradient = base.to_matrix(gradient, self.weights[i].shape)
             remove_bias = np.ones(gradient.shape)
             remove_bias[0,:] = 0
-            gradient = gradient + self.weights[i]*remove_bias * self.regularization
+            gradient + self.weights[i] * remove_bias * self.regularization
+            #gradient = gradient + self.weights[i]*remove_bias * self.regularization
             self.gradients.append(gradient)
             self.lambdas.append(new_lambda)
             self.augmented_weights.append(no_bias_weight)
@@ -230,7 +231,8 @@ class neural_network:
     def track_cost(self,df):
         predictions = self.states[-1]
         cost = self.cost_function(df.y,predictions,df.s)
-        reg = [np.linalg.norm(w)**2 for w in self.augmented_weights]
+        #reg = [np.linalg.norm(w)**2 for w in self.augmented_weights]
+        reg = [np.linalg.norm(w) ** 2 for w in self.weights]
         reg = np.sum(reg) / 2 * self.regularization
         cost = cost + reg
         self.costs.append(cost)

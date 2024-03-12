@@ -1,6 +1,11 @@
 import Base as base
 from sklearn import datasets
 import numpy as np
+from NNET import neural_network
+from Data import data
+import ActivationFunctions as af
+import CostFunctions as cf
+import matplotlib.pyplot as plt
 
 '''Import the data from sklearn'''
 iris = datasets.load_iris()
@@ -32,9 +37,23 @@ y_test = y_outcomes[test_indices]
 
 '''Define the neural network'''
 np.random.seed(100)
-nnet = base.create_network(x_train,
-                           y_train,
-                           neurons = [4,8,8,2],
-                           activations = [base.sigmoid,
-                                          base.sigmoid,
-                                          base.sigmoid])
+
+training = data(x_train,y_train)
+validation = data(x_test, y_test)
+nnet = neural_network(layers=[4, 8, 2],
+                      activation_functions=[af.relu,
+                                            af.sigmoid],
+                      cost_function=cf.half_SSE)
+
+nnet.weights = [0*w for w in nnet.weights]
+
+step = 0.4
+itr = 1000
+nnet.train(training, max_iterations=itr, step_size=step)
+nnet.predict(validation)
+print(np.round(validation.predictions)-validation.y)
+
+plt.plot(nnet.costs)
+plt.show()
+
+print(nnet.costs[-1])

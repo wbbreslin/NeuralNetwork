@@ -21,10 +21,10 @@ y_validation = np.array([[1,1,0,0],
                          [0,0,1,1]]).T
 
 '''Define the model'''
-np.random.seed(333)
+#np.random.seed(333)
 training = data(x, y)
 n = x.shape[0]
-theta = 0.018/n
+theta = 0.001/n
 nnet = neural_network(layers=[2, 2, 3, 2],
                       activation_functions=[af.sigmoid,
                                             af.sigmoid,
@@ -36,13 +36,13 @@ nnet = neural_network(layers=[2, 2, 3, 2],
 nnet_untrained = copy.deepcopy(nnet)
 
 '''Train the network'''
-itr1 = 6000
+itr1 = 5000
 step1 = 0.25
-itr2 = 6000
+itr2 = 5000
 step2 = 0.05
 
-nnet.train(training, max_iterations=itr1, step_size=0.25)
-nnet.train(training, max_iterations=itr2, step_size=0.05)
+nnet.train(training, max_iterations=itr1, step_size=step1)
+nnet.train(training, max_iterations=itr2, step_size=step2)
 
 '''Make copy of trained network to modify later'''
 nnet_trained = copy.deepcopy(nnet)
@@ -58,10 +58,11 @@ nnet.compute_hessian()
 validation = data(x_validation,y_validation)
 
 #Set up gradient matrices
-g0 = np.zeros(nnet.weights[0].shape)
-g1 = np.zeros(nnet.weights[1].shape)
-g2 = np.zeros(nnet.weights[2].shape)
-gradients = [g0, g1, g2]
+#g0 = np.zeros(nnet.weights[0].shape)
+#g1 = np.zeros(nnet.weights[1].shape)
+#g2 = np.zeros(nnet.weights[2].shape)
+#gradients = [g0, g1, g2]
+gradients = [np.zeros(w.shape) for w in nnet.weights]
 
 nnet_FDM = copy.deepcopy(nnet)
 nnet_plus = copy.deepcopy(nnet_FDM)
@@ -114,7 +115,8 @@ print(FDM_gradient-nnet_q.gradient_vector)
 
 
 '''FDM for dJdSW'''
-dJdSW = np.zeros((10,23))
+params = np.sum([w.size for w in nnet.weights])
+dJdSW = np.zeros((10,params))
 for i in range(10):
     training_FDM_plus = copy.deepcopy(training)
     training_FDM_minus = copy.deepcopy(training)
@@ -168,23 +170,22 @@ max_hess = np.abs(np.max(hessian))
 bound_hess = np.max((min_hess, max_hess))
 
 # Create the plots
-figure, axes = plt.subplots(2, 2, figsize=(18, 12))
+figure, axes = plt.subplots(1, 3, figsize=(18, 12))
 
-im1 = axes[0,0].imshow(matrix, cmap='seismic', vmin=-bound_full, vmax=bound_full)
-axes[0,0].set_title('SW Derivative of Cost')
-cbar1 = figure.colorbar(im1, ax=axes[0,0], orientation='horizontal')
+im1 = axes[0].imshow(matrix, cmap='seismic', vmin=-bound_full, vmax=bound_full)
+axes[0].set_title('SW Derivative of Cost')
+cbar1 = figure.colorbar(im1, ax=axes[0], orientation='horizontal')
 
-im2 = axes[0,1].imshow(hessian_inv, cmap='seismic', vmin=-bound_inv, vmax=bound_inv)
-axes[0,1].set_title('Inverse Hessian of Cost')
-cbar2 = figure.colorbar(im2, ax=axes[0,1])
 
-im3 = axes[1,0].imshow(product, cmap='seismic', vmin=-bound_prod, vmax=bound_prod)
-axes[1,0].set_title('Product: SW(J) x Inverse Hessian')
-cbar3 = figure.colorbar(im3, ax=axes[1,0], orientation='horizontal')
+im2 = axes[1].imshow(hessian_inv, cmap='seismic', vmin=-bound_inv, vmax=bound_inv)
+axes[1].set_title('Inverse Hessian of Cost')
+cbar2 = figure.colorbar(im2, ax=axes[1], orientation='horizontal')
+axes[1].set_aspect(17/17)
 
-im4 = axes[1,1].imshow(hessian, cmap='seismic', vmin=-bound_hess, vmax=bound_hess)
-axes[1,1].set_title('Hessian Matrix')
-cbar4 = figure.colorbar(im4, ax=axes[1,1])
+im3 = axes[2].imshow(product, cmap='seismic', vmin=-bound_prod, vmax=bound_prod)
+axes[2].set_title('Product: SW(J) x Inverse Hessian')
+cbar3 = figure.colorbar(im3, ax=axes[2], orientation='horizontal')
+
 
 #plt.tight_layout()
 plt.show()
