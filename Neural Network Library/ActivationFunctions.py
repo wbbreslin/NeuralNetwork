@@ -28,6 +28,3 @@ def linear_derivative(x):
 def linear_second_derivative(x):
     return x*0
 
-x = np.array([[1,2,-1,1,-3]])
-print(relu(x))
-print(relu_derivative(x))

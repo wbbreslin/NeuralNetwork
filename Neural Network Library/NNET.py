@@ -20,7 +20,7 @@ class neural_network:
         self.validation_function = validation_function
         self.regularization = regularization
 
-        # Initialize random weights
+        # Initialize weights
         self.layers = layers
         self.weights = []
         for i in range(len(self.activation_functions)):
@@ -243,6 +243,25 @@ class neural_network:
             self.backward(df)
             self.track_cost(df)
             self.update(step_size)
+
+    def train_newton(self,df,max_iterations=5000, step_size=0.05):
+        for i in range(max_iterations):
+            self.forward(df)
+            self.backward(df)
+            self.compute_hessian()
+            self.track_cost(df)
+            self.update_newton(step_size)
+
+    def Hvp(self,v):
+        self.soa_forward(v)
+        self.soa_backward(v)
+        print(hvp.shape for hvp in self.hvps)
+        return 1
+    def update_newton(self, step_size=0.05):
+        B = np.linalg.inv(self.hessian_matrix)
+        for i in range(len(self.weights)):
+            #Need to isolate rows of B based on iteration i, call the result b
+            self.weights[i] = self.weights[i] - step_size * b @ self.gradients[i]
 
     def compute_gradient(self):
         self.gradient_vector = [[1]]
