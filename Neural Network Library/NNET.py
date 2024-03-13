@@ -252,16 +252,10 @@ class neural_network:
             self.track_cost(df)
             self.update_newton(step_size)
 
-    def Hvp(self,v):
-        self.soa_forward(v)
-        self.soa_backward(v)
-        print(hvp.shape for hvp in self.hvps)
-        return 1
     def update_newton(self, step_size=0.05):
+        '''Incomplete'''
         B = np.linalg.inv(self.hessian_matrix)
-        for i in range(len(self.weights)):
-            #Need to isolate rows of B based on iteration i, call the result b
-            self.weights[i] = self.weights[i] - step_size * b @ self.gradients[i]
+        return B
 
     def compute_gradient(self):
         self.gradient_vector = [[1]]

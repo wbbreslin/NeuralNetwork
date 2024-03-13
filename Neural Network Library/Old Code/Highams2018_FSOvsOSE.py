@@ -38,8 +38,9 @@ training = data(x,y)
 n = x.shape[0]
 validation = data(x_validation,y_validation)
 theta = 0.001/n
-nnet = neural_network(layers=[2,3,2],
-                      activation_functions = [af.linear,
+nnet = neural_network(layers=[2,2,3,2],
+                      activation_functions = [af.sigmoid,
+                                              af.sigmoid,
                                               af.sigmoid],
                       cost_function=cf.half_SSE,
                       regularization = theta)
@@ -92,7 +93,7 @@ ref_weights = np.vstack(ref_weights)
 
 
 cost_impact = []
-perturbation = 10**-6
+perturbation = 0.15
 #with step1=0.25 and step2=0.05
 #perturbation = (step1*itr1 + step2*itr2)/(itr1+itr2)
 for i in range(x.shape[0]):
