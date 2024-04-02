@@ -1,0 +1,34 @@
+import Base as base
+import NeuralNetwork as nn
+import NNET as net2
+from Data import data
+import numpy as np
+import ActivationFunctions as af
+import CostFunctions as cf
+import copy
+import matplotlib.pyplot as plt
+
+np.random.seed(100)
+
+x = np.array([[0.1,0.3,0.1,0.6,0.4,0.6,0.5,0.9,0.4,0.7],
+                        [0.1,0.4,0.5,0.9,0.2,0.3,0.6,0.2,0.4,0.6]])
+
+"""The data set of outcome variables"""
+y = np.array([[1,1,1,1,1,0,0,0,0,0],
+                      [0,0,0,0,0,1,1,1,1,1]])
+
+nnet = nn.neural_network(layers=[2,2,3,2],
+                           activation_functions = [af.sigmoid,
+                                                   af.sigmoid,
+                                                   af.sigmoid],
+                           cost_function=cf.half_SSE)
+
+weights = nnet.weights
+
+# Sigmoid is working, softmax output is not
+training = data(x,y)
+nnet.forward(training)
+nnet.backward(training)
+nnet.train(training, max_iterations =5000, step_size=0.25)
+plt.plot(nnet.costs)
+plt.show()
