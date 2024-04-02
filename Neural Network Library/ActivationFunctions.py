@@ -46,7 +46,9 @@ def softmax_derivative(x):
     ds = np.transpose(ds,(2,0,1))
     return(ds)
 def softmax_second_derivative(x):
-    return np.apply_along_axis(softmax_hessian, 0, x)
+    d2s = np.apply_along_axis(softmax_hessian, 0, x)
+    d2s = np.transpose(d2s, (3, 0, 1, 2))
+    return d2s
 
 def softmax_jacobian(x):
     s = softmax(x)
@@ -57,12 +59,33 @@ def softmax_jacobian(x):
 
 def softmax_hessian(x):
     """Compute the Hessian matrix of the softmax function."""
-    s = softmax(x)
-    n = len(s)
-    jac_first = softmax_derivative(x)
-    hessian = np.zeros((n, n, n))
-    diag_idx = np.diag_indices(n)
-    hessian[diag_idx] = s * (1 - 2 * s)
-    hessian += np.einsum('i,jk->ijk', s, np.eye(n))
-    hessian -= np.einsum('ij,k->ijk', jac_first, s)
+    s = softmax_function(x)
+    ds = softmax_jacobian(x)
+    size = s.size
+    i, j, k = np.indices((size, size, size))
+    tensor = np.where((i == j) & (j == k), 1 - 2 * s[i], 0)
+    tensor = np.where((j == k) & (i != j), -s[i], tensor)
+    tensor = np.where((i == j) & (i != k), -s[k], tensor)
+    hessian = ds @ tensor
     return hessian
+
+'''
+x = np.array([[2],
+              [3]])
+
+print("Softmax")
+print(softmax(x))
+print("Jacobian")
+print(softmax_derivative(x))
+print("Hessian")
+print(softmax_second_derivative(x))
+
+s = softmax(x)
+g = softmax_derivative(x)
+s1 = float(s[0])
+s2 = float(s[1])
+grad_g = np.array([[1-2*s1, -s2, -s2, 0],
+                   [0, -s1, -s1, 1-2*s2]])
+
+print(g @ grad_g)
+'''
