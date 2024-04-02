@@ -37,6 +37,8 @@ def sigmoid_hessian(x):
     return sigmoid(x)*(1-sigmoid(x))*(1-2*sigmoid(x))
 
 def softmax(x):
+    return np.apply_along_axis(softmax_function, 0, x)
+def softmax_function(x):
     return np.exp(x)/np.sum(np.exp(x))
 
 def softmax_derivative(x):
@@ -57,7 +59,7 @@ def softmax_hessian(x):
     """Compute the Hessian matrix of the softmax function."""
     s = softmax(x)
     n = len(s)
-    jac_first = softmax_first_derivative(x)
+    jac_first = softmax_derivative(x)
     hessian = np.zeros((n, n, n))
     diag_idx = np.diag_indices(n)
     hessian[diag_idx] = s * (1 - 2 * s)

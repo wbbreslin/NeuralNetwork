@@ -20,7 +20,7 @@ y = np.array([[1,1,1,1,1,0,0,0,0,0],
 nnet = nn.neural_network(layers=[2,2,3,2],
                            activation_functions = [af.sigmoid,
                                                    af.sigmoid,
-                                                   af.sigmoid],
+                                                   af.softmax],
                            cost_function=cf.half_SSE)
 
 weights = nnet.weights
