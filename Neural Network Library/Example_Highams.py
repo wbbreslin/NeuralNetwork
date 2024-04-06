@@ -30,8 +30,8 @@ training = data(x,y)
 nnet.forward(training)
 nnet.backward(training)
 nnet.train(training, max_iterations =3000, step_size=0.25) #3000
-#plt.plot(nnet.costs)
-#plt.show()
+plt.plot(nnet.costs)
+plt.show()
 
 vectors = nnet.gradients
 nnet.soa_forward(vectors) #This is working, but need to validate results...

@@ -206,7 +206,7 @@ def unit_matrix(i,n):
     m[i,i] = 1
     return(m)
 
-def tensor_matrix_product_by_column(tensor,matrix):
+def columnwise_tensor_matrix_product(tensor,matrix):
     matrix = matrix.T
     matrix = matrix[:, :, np.newaxis]
     return tensor @ matrix

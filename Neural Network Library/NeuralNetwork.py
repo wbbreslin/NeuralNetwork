@@ -82,23 +82,23 @@ class neural_network:
         for i in reversed(range(len(self.activation_functions))):
             p = self.layers[i]
             q = self.layers[i+1]
-            no_bias_weight = self.weights[i][:,1:]
+
             #Gradient calculation
-            x_reshaped = self.augmented_states[i][:, :, None, None] #Convert to tensor
-            x_kron = x_reshaped * self.activation_jacobian_matrices[i] #Broadcast multiplication
-            x_kron = x_kron.transpose(0, 2, 1, 3).reshape(q*(p+1), n*q) # Reshape to matrix representation
-            gradient = x_kron @ adjoint_vec
+            f_grad_w = activation_gradient_w(self.augmented_states[i],
+                                             self.activation_jacobian_matrices[i])
+            gradient = f_grad_w @ adjoint_vec
 
             #Adjoint calculation
-            w_kron = no_bias_weight.T @ self.activation_jacobian_matrices[i]
-            new_lambda = base.tensor_matrix_product_by_column(w_kron, adjoint_mat)
+            no_bias_weight = self.weights[i][:,1:]
+            f_grad_x = activation_gradient_x(no_bias_weight, self.activation_jacobian_matrices[i])
+            new_lambda = base.columnwise_tensor_matrix_product(f_grad_x, adjoint_mat)
             new_lambda = new_lambda.reshape(n*p,1)
 
             gradient = base.to_matrix(gradient, self.weights[i].shape)
             remove_bias = np.ones(gradient.shape)
             remove_bias[:,0] = 0
             gradient + self.weights[i] * remove_bias * self.regularization
-            #gradient = gradient + self.weights[i]*remove_bias * self.regularization
+
             self.gradients.append(gradient)
             self.lambdas.append(new_lambda)
             self.augmented_weights.append(no_bias_weight)
@@ -149,21 +149,27 @@ class neural_network:
             q = self.layers[i + 1]
 
             # X:Identity Kronecker Product
-            x_reshaped = self.augmented_states[i][:, :, None, None]
-            x_kron = x_reshaped * self.activation_jacobian_matrices[i]
-            x_kron = x_kron.transpose(0, 2, 1, 3).reshape(q * (p + 1), n * q)
+            #x_reshaped = self.augmented_states[i][:, :, None, None]
+            #x_kron = x_reshaped * self.activation_jacobian_matrices[i]
+            #print(x_kron.shape)
+            #x_kron = x_kron.transpose(0, 2, 1, 3).reshape(q * (p + 1), n * q)
+            #print(x_kron.shape)
+            f_grad_w = activation_gradient_w(self.augmented_states[i],
+                                             self.activation_jacobian_matrices[i])
 
             # Identity:W' Kronecker Product
-            w_kron = self.augmented_weights[i].T @ self.activation_jacobian_matrices[i]
-            w_kron = np.transpose(w_kron, (0, 2, 1))
+            #w_kron = self.augmented_weights[i].T @ self.activation_jacobian_matrices[i]
+            f_grad_x = activation_gradient_x(self.augmented_weights[i],
+                                             self.activation_jacobian_matrices[i])
+            f_grad_x_transposed = np.transpose(f_grad_x, (0, 2, 1))
 
             #Updating Theta
             vec = base.to_vector(vectors[i])
             theta_mat = base.to_matrix(self.thetas[i],self.states[i].shape)
-            wkron_theta_product = base.tensor_matrix_product_by_column(w_kron, theta_mat)
-            wkron_theta_product = wkron_theta_product.reshape(n*q, 1)
-            wkron_theta_product = np.vstack(wkron_theta_product)
-            new_theta = wkron_theta_product + x_kron.T @ vec
+            theta_product = base.columnwise_tensor_matrix_product(f_grad_x_transposed, theta_mat)
+            theta_product = theta_product.reshape(n*q, 1)
+            theta_product = np.vstack(theta_product)
+            new_theta = theta_product + f_grad_w.T @ vec
 
             self.thetas.append(new_theta)
             wx =  self.weights[i] @ self.augmented_states[i]
@@ -311,6 +317,22 @@ class neural_network:
         self.hessian_matrix = full_hessian + reg_matrix #need to actually put this in Hvp code
 
 
+def activation_gradient_x(matrix,jacobian):
+    # Compute (IxM)J, returns matrix
+    product = matrix.T @ jacobian
+    return product
+
+def activation_gradient_w(matrix,jacobian):
+    # Compute (MxI)J, returns matrix
+    # Jacobian must be a tensor
+    p = matrix.shape[0]-1
+    n = matrix.shape[1]
+    q = jacobian.shape[1]
+    matrix_reshaped = matrix[:, :, None, None]  # Convert to tensor
+    product = matrix_reshaped * jacobian  # Broadcast multiplication
+    product = product.transpose(0, 2, 1, 3).reshape(q * (p + 1), n * q)  # Reshape to matrix representation
+    return product
+
 def K1v_Product(weight, n, vector):
     # Tensor-vector product for eliminating Kronecker product from second derivative
     matrix = base.to_matrix(vector, weight.shape)
@@ -332,3 +354,5 @@ def K2v_Product(weight, n, vector):
     out = np.vstack((zero, out))
     out = base.to_vector(out)
     return out
+
+
