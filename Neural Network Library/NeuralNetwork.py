@@ -84,9 +84,9 @@ class neural_network:
             q = self.layers[i+1]
             no_bias_weight = self.weights[i][:,1:]
             #Gradient calculation
-            x_reshaped = self.augmented_states[i][:, :, None, None]
-            x_kron = x_reshaped * self.activation_jacobian_matrices[i]
-            x_kron = x_kron.transpose(0, 2, 1, 3).reshape(q*(p+1), n*q)
+            x_reshaped = self.augmented_states[i][:, :, None, None] #Convert to tensor
+            x_kron = x_reshaped * self.activation_jacobian_matrices[i] #Broadcast multiplication
+            x_kron = x_kron.transpose(0, 2, 1, 3).reshape(q*(p+1), n*q) # Reshape to matrix representation
             gradient = x_kron @ adjoint_vec
 
             #Adjoint calculation
@@ -138,24 +138,36 @@ class neural_network:
 
     def soa_forward(self, vectors):
         # Forward pass through the tangent-linear model
-        theta = np.zeros(self.states[0].shape)
-        theta = base.to_vector(theta)
-        self.thetas = [theta]
+        theta_mat = np.zeros(self.states[0].shape)
+        theta_vec = base.to_vector(theta_mat)
+        self.thetas = [theta_mat]
         self.activation_hessian_matrices = []
-        n = self.augmented_states[0].shape[0]
+        n = self.augmented_states[0].shape[1]
 
         for i in range(len(self.augmented_weights)):
-            q = self.augmented_weights[i].shape[1]
-            new_theta = self.activation_jacobian_matrices[i] \
-                        @ np.kron(self.augmented_weights[i].T, np.eye(n)) \
-                        @ self.thetas[i] \
-                        + self.activation_jacobian_matrices[i] \
-                        @ np.kron(np.eye(q), self.augmented_states[i]) \
-                        @ vectors[i]
+            p = self.layers[i]
+            q = self.layers[i + 1]
+
+            # X:Identity Kronecker Product
+            x_reshaped = self.augmented_states[i][:, :, None, None]
+            x_kron = x_reshaped * self.activation_jacobian_matrices[i]
+            x_kron = x_kron.transpose(0, 2, 1, 3).reshape(q * (p + 1), n * q)
+
+            # Identity:W' Kronecker Product
+            w_kron = self.augmented_weights[i].T @ self.activation_jacobian_matrices[i]
+            w_kron = np.transpose(w_kron, (0, 2, 1))
+
+            #Updating Theta
+            vec = base.to_vector(vectors[i])
+            theta_mat = base.to_matrix(self.thetas[i],self.states[i].shape)
+            wkron_theta_product = base.tensor_matrix_product_by_column(w_kron, theta_mat)
+            wkron_theta_product = wkron_theta_product.reshape(n*q, 1)
+            wkron_theta_product = np.vstack(wkron_theta_product)
+            new_theta = wkron_theta_product + x_kron.T @ vec
+
             self.thetas.append(new_theta)
-            xw = self.augmented_states[i] @ self.weights[i]
-            xw_vec = base.to_vector(xw)
-            d2 = np.diagflat(self.activation_hessian_functions[i](xw_vec))
+            wx =  self.weights[i] @ self.augmented_states[i]
+            d2 = self.activation_hessian_functions[i](wx)
             self.activation_hessian_matrices.append(d2)
 
     def soa_backward(self, vectors):

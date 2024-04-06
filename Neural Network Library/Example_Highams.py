@@ -29,6 +29,10 @@ weights = nnet.weights
 training = data(x,y)
 nnet.forward(training)
 nnet.backward(training)
-nnet.train(training, max_iterations =5000, step_size=0.25)
-plt.plot(nnet.costs)
-plt.show()
+nnet.train(training, max_iterations =3000, step_size=0.25) #3000
+#plt.plot(nnet.costs)
+#plt.show()
+
+vectors = nnet.gradients
+nnet.soa_forward(vectors) #This is working, but need to validate results...
+print([h.shape for h in nnet.activation_hessian_matrices])

@@ -28,13 +28,22 @@ def sigmoid_derivative(x):
     return ds
 
 def sigmoid_second_derivative(x):
-    np.apply_along_axis(sigmoid_hessian, 0, x)
+    d2s = np.apply_along_axis(sigmoid_hessian, 0, x)
+    d2s = np.transpose(d2s, (3, 0, 1, 2))
+    return d2s
 
 def sigmoid_jacobian(x):
     return np.diagflat(sigmoid(x) * (1 - sigmoid(x)))
 
 def sigmoid_hessian(x):
-    return sigmoid(x)*(1-sigmoid(x))*(1-2*sigmoid(x))
+    """Compute the Hessian matrix of the softmax function."""
+    s = sigmoid(x)
+    ds = sigmoid_jacobian(x)
+    size = s.size
+    i, j, k = np.indices((size, size, size))
+    tensor = np.where((i == j) & (j == k), 1 - 2 * s[i], 0)
+    hessian = ds @ tensor
+    return hessian
 
 def softmax(x):
     return np.apply_along_axis(softmax_function, 0, x)
@@ -89,3 +98,4 @@ grad_g = np.array([[1-2*s1, -s2, -s2, 0],
 
 print(g @ grad_g)
 '''
+
