@@ -84,13 +84,13 @@ class neural_network:
             q = self.layers[i+1]
 
             #Gradient calculation
-            f_grad_w = activation_gradient_w(self.augmented_states[i],
-                                             self.activation_jacobian_matrices[i])
+            f_grad_w = x_kronecker_identity_times_block_matrix(self.augmented_states[i],
+                                                               self.activation_jacobian_matrices[i])
             gradient = f_grad_w @ adjoint_vec
 
             #Adjoint calculation
             no_bias_weight = self.weights[i][:,1:]
-            f_grad_x = activation_gradient_x(no_bias_weight, self.activation_jacobian_matrices[i])
+            f_grad_x = no_bias_weight.T @ self.activation_jacobian_matrices[i]
             new_lambda = base.columnwise_tensor_matrix_product(f_grad_x, adjoint_mat)
             new_lambda = new_lambda.reshape(n*p,1)
 
@@ -148,19 +148,10 @@ class neural_network:
             p = self.layers[i]
             q = self.layers[i + 1]
 
-            # X:Identity Kronecker Product
-            #x_reshaped = self.augmented_states[i][:, :, None, None]
-            #x_kron = x_reshaped * self.activation_jacobian_matrices[i]
-            #print(x_kron.shape)
-            #x_kron = x_kron.transpose(0, 2, 1, 3).reshape(q * (p + 1), n * q)
-            #print(x_kron.shape)
-            f_grad_w = activation_gradient_w(self.augmented_states[i],
-                                             self.activation_jacobian_matrices[i])
+            f_grad_w = x_kronecker_identity_times_block_matrix(self.augmented_states[i],
+                                                               self.activation_jacobian_matrices[i])
 
-            # Identity:W' Kronecker Product
-            #w_kron = self.augmented_weights[i].T @ self.activation_jacobian_matrices[i]
-            f_grad_x = activation_gradient_x(self.augmented_weights[i],
-                                             self.activation_jacobian_matrices[i])
+            f_grad_x = self.augmented_weights[i].T @ self.activation_jacobian_matrices[i]
             f_grad_x_transposed = np.transpose(f_grad_x, (0, 2, 1))
 
             #Updating Theta
@@ -199,15 +190,18 @@ class neural_network:
         self.omegas.reverse()
         self.hvps.reverse()
 
-
-    def Av_Tensor(self, i):
+    def Av_Tensor(self,i):
+        # Finished
         vector = self.thetas[i]
-        n = self.augmented_states[0].shape[0]
-        Av = np.kron(self.augmented_weights[i], np.eye(n)) \
-             @ np.diagflat(self.lambdas[i+1]) \
-             @ self.activation_hessian_matrices[i] \
-             @ np.kron(self.augmented_weights[i], np.eye(n)).T \
-             @ vector
+        n = self.augmented_states[0].shape[1]
+        p = self.states[i].shape[0]
+        w = self.augmented_weights[i]
+        Av = lambda_kronecker_times_hessian(self.lambdas[i+1],
+                                              self.activation_hessian_matrices[i])
+        Av = w.T @ Av @ w
+        matrix = base.to_matrix(vector, self.states[i].shape)
+        Av = base.columnwise_tensor_matrix_product(Av, matrix)
+        Av = Av.reshape(n*p,1)
         return Av
 
     def Bv_Tensor(self, vectors, i):
@@ -224,7 +218,19 @@ class neural_network:
              @ vectors[i]
         return Bv
 
-    def Cv_Tensor(self, i):
+    def Cv_Tensor(self,i):
+        vector = self.thetas[i]
+        n = self.augmented_states[0].shape[1]
+        p = self.states[i].shape[0]
+        q = self.states[i+1].shape[0]
+        Cv1 = lambda_kronecker_times_hessian(self.lambdas[i+1],
+                                            self.activation_hessian_matrices[i])
+        Cv1 = x_kronecker_identity_times_block_matrix(self.augmented_states[i],
+                                                     Cv1)
+        Cv1 = Cv1 @ np.kron(np.eye(n), self.augmented_weights[i]) @ vector
+        return Cv1
+
+    def Cv_Tensor_old(self, i):
         # Tensor-vector product for w- and x- derivatives of model equation
         vector = self.thetas[i]
         n = self.augmented_states[0].shape[0]
@@ -239,14 +245,14 @@ class neural_network:
              @ vector
         return Cv
 
-    def Dv_Tensor(self, vectors, i):
-        # Tensor-vector product for two w-derivatives of model equation
-        q = self.augmented_weights[i].shape[1]
-        Dv = np.kron(np.eye(q), self.augmented_states[i].T) \
-             @ np.diagflat(self.lambdas[i + 1]) \
-             @ self.activation_hessian_matrices[i] \
-             @ np.kron(np.eye(q), self.augmented_states[i]) \
-             @ vectors[i]
+    def Dv_Tensor(self,vectors,i):
+        # Finished
+        q = self.states[i+1].shape[0]
+        Dv = lambda_kronecker_times_hessian(self.lambdas[i+1],
+                                            self.activation_hessian_matrices[i])
+        Dv = x_kronecker_identity_times_block_matrix(self.augmented_states[i],
+                                                     Dv)
+        Dv = Dv @ np.kron(self.augmented_states[i].T, np.eye(q)) @ vectors[i]
         return Dv
 
     def update(self, step_size=0.05):
@@ -317,22 +323,6 @@ class neural_network:
         self.hessian_matrix = full_hessian + reg_matrix #need to actually put this in Hvp code
 
 
-def activation_gradient_x(matrix,jacobian):
-    # Compute (IxM)J, returns matrix
-    product = matrix.T @ jacobian
-    return product
-
-def activation_gradient_w(matrix,jacobian):
-    # Compute (MxI)J, returns matrix
-    # Jacobian must be a tensor
-    p = matrix.shape[0]-1
-    n = matrix.shape[1]
-    q = jacobian.shape[1]
-    matrix_reshaped = matrix[:, :, None, None]  # Convert to tensor
-    product = matrix_reshaped * jacobian  # Broadcast multiplication
-    product = product.transpose(0, 2, 1, 3).reshape(q * (p + 1), n * q)  # Reshape to matrix representation
-    return product
-
 def K1v_Product(weight, n, vector):
     # Tensor-vector product for eliminating Kronecker product from second derivative
     matrix = base.to_matrix(vector, weight.shape)
@@ -355,4 +345,22 @@ def K2v_Product(weight, n, vector):
     out = base.to_vector(out)
     return out
 
+def lambda_kronecker_times_hessian(lambda_vec, hessian_tensor):
+    n = hessian_tensor.shape[0]
+    q = hessian_tensor.shape[1]
+    lambda_vec = lambda_vec.reshape(n, q, 1, 1)
+    product = lambda_vec * hessian_tensor
+    sum_product = np.sum(product,axis=1)
+    return sum_product
+
+def x_kronecker_identity_times_block_matrix(matrix,jacobian):
+    # Compute (XxI)J, returns matrix
+    # Jacobian must be a tensor
+    p = matrix.shape[0]-1
+    n = matrix.shape[1]
+    q = jacobian.shape[1]
+    matrix_reshaped = matrix[:, :, None, None]  # Convert to tensor
+    product = matrix_reshaped * jacobian  # Broadcast multiplication
+    product = product.transpose(0, 2, 1, 3).reshape(q * (p + 1), n * q)  # Reshape to matrix representation
+    return product
 
