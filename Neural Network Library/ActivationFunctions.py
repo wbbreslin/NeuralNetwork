@@ -77,25 +77,3 @@ def softmax_hessian(x):
     tensor = np.where((i == j) & (i != k), -s[k], tensor)
     hessian = ds @ tensor
     return hessian
-
-'''
-x = np.array([[2],
-              [3]])
-
-print("Softmax")
-print(softmax(x))
-print("Jacobian")
-print(softmax_derivative(x))
-print("Hessian")
-print(softmax_second_derivative(x))
-
-s = softmax(x)
-g = softmax_derivative(x)
-s1 = float(s[0])
-s2 = float(s[1])
-grad_g = np.array([[1-2*s1, -s2, -s2, 0],
-                   [0, -s1, -s1, 1-2*s2]])
-
-print(g @ grad_g)
-'''
-

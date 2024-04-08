@@ -30,8 +30,8 @@ training = data(x,y)
 nnet.forward(training)
 nnet.backward(training)
 nnet.train(training, max_iterations =3000, step_size=0.25) #3000
-plt.plot(nnet.costs)
-plt.show()
+#plt.plot(nnet.costs)
+#plt.show()
 
 vectors = nnet.gradients
 nnet.soa_forward(vectors) #This is working, but need to validate results...
@@ -40,7 +40,9 @@ print([h.shape for h in nnet.activation_hessian_matrices])
 A = nnet.Av_Tensor(2)
 v = [base.to_vector(g) for g in nnet.gradients]
 D = nnet.Dv_Tensor(vectors=v, i=2)
-print(D.shape)
-print(D)
 C = nnet.Cv_Tensor(2)
-print(C.shape)
+print("Cv shape", C.shape)
+
+
+#plt.plot(p1, marker='o')
+#plt.show()

@@ -223,11 +223,20 @@ class neural_network:
         n = self.augmented_states[0].shape[1]
         p = self.states[i].shape[0]
         q = self.states[i+1].shape[0]
+        print(p)
+        print(q)
         Cv1 = lambda_kronecker_times_hessian(self.lambdas[i+1],
                                             self.activation_hessian_matrices[i])
         Cv1 = x_kronecker_identity_times_block_matrix(self.augmented_states[i],
                                                      Cv1)
         Cv1 = Cv1 @ np.kron(np.eye(n), self.augmented_weights[i]) @ vector
+
+        adjoint_matrix = base.to_matrix(self.lambdas[i+1],self.states[i+1].shape)
+        Cv2 = base.columnwise_tensor_matrix_product(self.activation_jacobian_matrices[i],
+                                                    adjoint_matrix)
+        Cv2 = Cv2.reshape(n*q,1).T
+        Cv2 = np.kron(Cv2, np.eye((p+1)*q)) @ K1v_Product(self.augmented_states[i],q,vector)
+
         return Cv1
 
     def Cv_Tensor_old(self, i):
@@ -323,11 +332,11 @@ class neural_network:
         self.hessian_matrix = full_hessian + reg_matrix #need to actually put this in Hvp code
 
 
-def K1v_Product(weight, n, vector):
+def K1v_Product(matrix, identity_dims, vector):
+    #Need to fix this for new setup
     # Tensor-vector product for eliminating Kronecker product from second derivative
-    matrix = base.to_matrix(vector, weight.shape)
-    matrix = matrix[1:, ]
-    out = np.kron(matrix, np.eye(n))
+    vec_matrix = base.to_matrix(vector, matrix.shape)
+    out = np.kron(vec_matrix, np.eye(identity_dims))
     out = base.to_vector(out)
     return out
 
@@ -363,4 +372,3 @@ def x_kronecker_identity_times_block_matrix(matrix,jacobian):
     product = matrix_reshaped * jacobian  # Broadcast multiplication
     product = product.transpose(0, 2, 1, 3).reshape(q * (p + 1), n * q)  # Reshape to matrix representation
     return product
-
