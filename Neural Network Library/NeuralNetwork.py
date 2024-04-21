@@ -204,7 +204,27 @@ class neural_network:
         Av = Av.reshape(n*p,1)
         return Av
 
-    def Bv_Tensor(self, vectors, i):
+    def Bv_Tensor(self,vectors,i):
+        n = self.augmented_states[0].shape[1]
+        p = self.states[i].shape[0]
+        q = self.states[i + 1].shape[0]
+        Bv1 = lambda_kronecker_times_hessian(self.lambdas[i + 1],
+                                             self.activation_hessian_matrices[i])
+        Bv1 = x_kronecker_identity_times_block_matrix(self.augmented_states[i],
+                                                      Bv1)
+        Bv1 = Bv1 @ np.kron(np.eye(n), self.augmented_weights[i])
+        Bv1 = Bv1.T @ vectors[i]
+
+        adjoint_matrix = base.to_matrix(self.lambdas[i + 1], self.states[i + 1].shape)
+        Bv2 = base.columnwise_tensor_matrix_product(self.activation_jacobian_matrices[i],
+                                                    adjoint_matrix)
+        Bv2 = np.kron(Bv2.reshape(n*q,1), np.eye((p+1)*q))
+        Bv2 = Bv2 @ vectors[i]
+        #Bv2 = K2v_Product(self.augmented_weights[i],n,Bv2) right idea, but need to fix the function
+        print("Bv2 shape", Bv2.shape)
+        return Bv1
+
+    def Bv_Tensor_old(self, vectors, i):
         # Tensor-vector product for an x- and w- derivative of model equation
         n = self.augmented_states[0].shape[0]
         p = self.augmented_weights[i].shape[0]
@@ -223,8 +243,6 @@ class neural_network:
         n = self.augmented_states[0].shape[1]
         p = self.states[i].shape[0]
         q = self.states[i+1].shape[0]
-        print(p)
-        print(q)
         Cv1 = lambda_kronecker_times_hessian(self.lambdas[i+1],
                                             self.activation_hessian_matrices[i])
         Cv1 = x_kronecker_identity_times_block_matrix(self.augmented_states[i],
@@ -234,10 +252,11 @@ class neural_network:
         adjoint_matrix = base.to_matrix(self.lambdas[i+1],self.states[i+1].shape)
         Cv2 = base.columnwise_tensor_matrix_product(self.activation_jacobian_matrices[i],
                                                     adjoint_matrix)
-        Cv2 = Cv2.reshape(n*q,1).T
-        Cv2 = np.kron(Cv2, np.eye((p+1)*q)) @ K1v_Product(self.augmented_states[i],q,vector)
 
-        return Cv1
+        Cv2 = np.kron(Cv2.reshape(n*q,1).T, np.eye((p+1)*q))
+        Cv2 = Cv2 @ Kv(vector, (p,n),q)
+
+        return Cv1 + Cv2
 
     def Cv_Tensor_old(self, i):
         # Tensor-vector product for w- and x- derivatives of model equation
@@ -339,6 +358,15 @@ def K1v_Product(matrix, identity_dims, vector):
     out = np.kron(vec_matrix, np.eye(identity_dims))
     out = base.to_vector(out)
     return out
+
+'''This ended up the same code as before, just with fewer assumptions about the matrix'''
+def Kv(vector,shape,dim):
+    matrix = base.to_matrix(vector,shape)
+    zero = np.zeros((1, shape[1]))
+    matrix = np.vstack((zero, matrix))
+    y = np.kron(matrix, np.eye(dim))
+    y = base.to_vector(y)
+    return y
 
 def K2v_Product(weight, n, vector):
     # Tensor-vector product for eliminating Kronecker product from second derivative

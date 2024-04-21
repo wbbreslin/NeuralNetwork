@@ -41,6 +41,8 @@ A = nnet.Av_Tensor(2)
 v = [base.to_vector(g) for g in nnet.gradients]
 D = nnet.Dv_Tensor(vectors=v, i=2)
 C = nnet.Cv_Tensor(2)
+B = nnet.Bv_Tensor(vectors=v, i=2)
+print("Bv shape", B.shape)
 print("Cv shape", C.shape)
 
 
