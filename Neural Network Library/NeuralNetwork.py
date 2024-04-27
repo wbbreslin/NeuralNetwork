@@ -140,7 +140,7 @@ class neural_network:
         # Forward pass through the tangent-linear model
         theta_mat = np.zeros(self.states[0].shape)
         theta_vec = base.to_vector(theta_mat)
-        self.thetas = [theta_mat]
+        self.thetas = [theta_vec]
         self.activation_hessian_matrices = []
         n = self.augmented_states[0].shape[1]
 
@@ -175,17 +175,19 @@ class neural_network:
         self.hvps = []
         for i in reversed(range(len(self.augmented_weights))):
             q = self.weights[i].shape[1]
-            gradient = np.kron(self.augmented_weights[i], np.eye(n)) @ self.activation_jacobian_matrices[i]
-            Hv = np.kron(np.eye(q), self.augmented_states[i].T) @ self.activation_jacobian_matrices[i] \
-                 @ omega \
-                 + self.Dv_Tensor(vectors, i) \
-                 + self.Cv_Tensor(i)
-            new_omega = gradient @ omega + self.Av_Tensor(i) + self.Bv_Tensor(vectors, i)
+
+            f_grad_x = self.augmented_weights[i].T @ self.activation_jacobian_matrices[i]
+            f_grad_w = x_kronecker_identity_times_block_matrix(self.augmented_states[i],
+                                                               self.activation_jacobian_matrices[i])
+
+            Hv = f_grad_w @ omega + self.Dv_Tensor(vectors, i) + self.Cv_Tensor(i)
+            new_omega = block_diag_times_vector(f_grad_x,omega) + self.Av_Tensor(i) + self.Bv_Tensor(vectors, i)
             self.omegas.append(new_omega)
             dims = self.gradients[i].shape
             Hv = base.to_matrix(Hv, dims)
             self.hvps.append(Hv)
             omega = new_omega
+
 
         self.omegas.reverse()
         self.hvps.reverse()
@@ -220,23 +222,8 @@ class neural_network:
                                                     adjoint_matrix)
         Bv2 = np.kron(Bv2.reshape(n*q,1), np.eye((p+1)*q))
         Bv2 = Bv2 @ vectors[i]
-        #Bv2 = K2v_Product(self.augmented_weights[i],n,Bv2) right idea, but need to fix the function
-        print("Bv2 shape", Bv2.shape)
-        return Bv1
-
-    def Bv_Tensor_old(self, vectors, i):
-        # Tensor-vector product for an x- and w- derivative of model equation
-        n = self.augmented_states[0].shape[0]
-        p = self.augmented_weights[i].shape[0]
-        q = self.augmented_weights[i].shape[1]
-        Bv = np.kron(self.lambdas[i + 1].T @ self.activation_jacobian_matrices[i], np.eye(n * p)) \
-             @ K1v_Product(self.weights[i], n, vectors[i]) \
-             + np.kron(self.augmented_weights[i], np.eye(n)) \
-             @ np.diagflat(self.lambdas[i + 1]) \
-             @ self.activation_hessian_matrices[i] \
-             @ np.kron(np.eye(q), self.augmented_states[i]) \
-             @ vectors[i]
-        return Bv
+        Bv2 = K2v_Product(Bv2,p,q,n)
+        return Bv1 + Bv2
 
     def Cv_Tensor(self,i):
         vector = self.thetas[i]
@@ -257,21 +244,6 @@ class neural_network:
         Cv2 = Cv2 @ Kv(vector, (p,n),q)
 
         return Cv1 + Cv2
-
-    def Cv_Tensor_old(self, i):
-        # Tensor-vector product for w- and x- derivatives of model equation
-        vector = self.thetas[i]
-        n = self.augmented_states[0].shape[0]
-        p = self.augmented_weights[i].shape[0]
-        q = self.augmented_weights[i].shape[1]
-        v = np.kron(self.activation_jacobian_matrices[i] @ self.lambdas[i + 1], np.eye(n * p)) @ vector
-        Cv = K2v_Product(self.weights[i], n, v) \
-             + (np.kron(self.augmented_weights[i], np.eye(n))
-                @ np.diagflat(self.lambdas[i + 1])
-                @ self.activation_hessian_matrices[i]
-                @ np.kron(np.eye(q), self.augmented_states[i])).T \
-             @ vector
-        return Cv
 
     def Dv_Tensor(self,vectors,i):
         # Finished
@@ -368,7 +340,7 @@ def Kv(vector,shape,dim):
     y = base.to_vector(y)
     return y
 
-def K2v_Product(weight, n, vector):
+def K2v_Product_old(weight, n, vector):
     # Tensor-vector product for eliminating Kronecker product from second derivative
     p = weight.shape[0] - 1
     q = weight.shape[1]
@@ -379,6 +351,17 @@ def K2v_Product(weight, n, vector):
     out = P @ vector
     zero = np.zeros((1, q))
     out = np.vstack((zero, out))
+    out = base.to_vector(out)
+    return out
+
+def K2v_Product(vector, p, q, n):
+    # Tensor-vector product for eliminating Kronecker product from second derivative
+    vector = base.to_matrix(vector, (q * (p+1) * q, n))
+    I = np.eye(q * (p+1))
+    I = base.to_vector(I)
+    I = base.to_matrix(I, (p+1, q * q * (p+1)))
+    out = I @ vector
+    out = out[1:,:]
     out = base.to_vector(out)
     return out
 
@@ -399,4 +382,14 @@ def x_kronecker_identity_times_block_matrix(matrix,jacobian):
     matrix_reshaped = matrix[:, :, None, None]  # Convert to tensor
     product = matrix_reshaped * jacobian  # Broadcast multiplication
     product = product.transpose(0, 2, 1, 3).reshape(q * (p + 1), n * q)  # Reshape to matrix representation
+    return product
+
+def block_diag_times_vector(tensor,vector):
+    n = tensor.shape[0]
+    a = tensor.shape[1]
+    b = tensor.shape[2]
+    reshaped_vector = vector.reshape(n,1,b)
+    product = tensor * reshaped_vector
+    product = np.sum(product, axis=2)
+    product = product.reshape(n*a,1)
     return product
