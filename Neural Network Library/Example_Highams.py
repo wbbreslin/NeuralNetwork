@@ -132,3 +132,6 @@ cbar3 = figure.colorbar(im3, ax=axes[2], shrink=0.6)
 
 plt.tight_layout()
 plt.show()
+
+nnet.backward_hyperparameter_derivative(training)
+print(nnet.dSW.shape)

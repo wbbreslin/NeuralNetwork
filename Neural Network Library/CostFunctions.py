@@ -10,7 +10,7 @@ def MSE(y1,y2,s=1):
 
 def half_SSE(y1,y2,s=1):
     residuals = y1 - y2
-    squared_residuals = (residuals @ residuals.T) * s
+    squared_residuals = (residuals.T @ residuals) * s
     SSE = np.trace(squared_residuals) / 2
     return SSE
 

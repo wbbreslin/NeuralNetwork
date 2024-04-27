@@ -73,7 +73,7 @@ class neural_network:
 
     def backward(self,data):
         n = self.states[-1].shape[1]
-        adjoint_mat = data.s * (self.states[-1] - data.y)
+        adjoint_mat = (data.s * (self.states[-1] - data.y).T).T
         adjoint_vec = base.to_vector(adjoint_mat)
         self.lambdas = [adjoint_vec]
         self.gradients = []
@@ -97,7 +97,8 @@ class neural_network:
             gradient = base.to_matrix(gradient, self.weights[i].shape)
             remove_bias = np.ones(gradient.shape)
             remove_bias[:,0] = 0
-            gradient + self.weights[i] * remove_bias * self.regularization
+            #gradient + self.weights[i] * remove_bias * self.regularization
+            #need to check regularization implementation...
 
             self.gradients.append(gradient)
             self.lambdas.append(new_lambda)
@@ -110,31 +111,40 @@ class neural_network:
         self.augmented_weights.reverse()
 
     def backward_hyperparameter_derivative(self, data):
-        n = self.states[-1].shape[0]
+        n = self.states[-1].shape[1]
         self.dSW =[]
         for j in range(n):
-            dλ = base.unit_matrix(j,n) @ (self.states[-1] - data.y)
-            dλ = base.to_vector(dλ)
+            dλ_mat = (self.states[-1] - data.y) @ base.unit_matrix(j,n)
+            dλ_vec = base.to_vector(dλ_mat)
             current_dSW = []
 
             for i in reversed(range(len(self.activation_functions))):
-                p = self.layers[i+1]
-                no_bias_weight = self.weights[i][1:,:]
+                p = self.layers[i+1]+1
 
-                gradient = dλ.T \
-                           @ self.activation_jacobian_matrices[i] \
-                           @ np.kron(np.eye(p),self.augmented_states[i])
+                #Lambda derivative calculation
+                no_bias_weight = self.weights[i][:,1:]
+                f_grad_x = no_bias_weight.T @ self.activation_jacobian_matrices[i]
+                new_lambda_derivative = base.columnwise_tensor_matrix_product(f_grad_x, dλ_mat)
+                a = new_lambda_derivative.shape[0]
+                b = new_lambda_derivative.shape[1]
+                new_lambda_derivative = new_lambda_derivative.reshape(a*b, 1)
 
-                new_dλ = (dλ.T
-                        @ self.activation_jacobian_matrices[i]
-                        @ np.kron(no_bias_weight.T, np.eye(n))).T
+                # Gradient calculation
+                f_grad_w = x_kronecker_identity_times_block_matrix(self.augmented_states[i],
+                                                                   self.activation_jacobian_matrices[i])
+                gradient = f_grad_w @ dλ_vec
 
-                dλ = new_dλ
+                #Update and store values
+                dλ_vec = new_lambda_derivative
+                dλ_mat = base.to_matrix(new_lambda_derivative,(b,a))
                 current_dSW.append(gradient)
+
             current_dSW.reverse()
-            current_dSW = np.hstack(current_dSW)
+            print([s.shape for s in current_dSW])
+            current_dSW = np.vstack(current_dSW)
             self.dSW.append(current_dSW)
-        self.dSW = np.vstack(self.dSW)
+        self.dSW = np.hstack(self.dSW)
+        self.dSW = self.dSW.T
 
     def soa_forward(self, vectors):
         # Forward pass through the tangent-linear model
