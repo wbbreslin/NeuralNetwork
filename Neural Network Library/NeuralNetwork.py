@@ -20,6 +20,11 @@ class neural_network:
         self.validation_function = validation_function
         self.regularization = regularization
 
+        #ADAM
+        self.momentum = [0] * len(layers)
+        self.velocity = [0] * len(layers)
+        self.iter = 0
+
         # Initialize weights
         self.layers = layers
         self.weights = []
@@ -56,20 +61,18 @@ class neural_network:
             self.states.append(self.activation_functions[i](z))
             self.activation_jacobian_matrices.append(self.activation_jacobian_functions[i](z))
 
-    # Need to fix predict to work with new forward parameterization
-    '''
-        def predict(self,data):
+
+    def predict(self,data):
         states = [data.x]
         augmented_states = []
 
         for i in range(len(self.activation_functions)):
-            ones_column = np.ones((states[i].shape[0], 1))
-            augmented_states.append(np.hstack((ones_column, states[i])))
-            z = augmented_states[i] @ self.weights[i]
+            ones_row = np.ones((1,self.states[i].shape[1]))
+            augmented_states.append(np.vstack((ones_row, self.states[i])))
+            z = self.weights[i] @ self.augmented_states[i]
             states.append(self.activation_functions[i](z))
 
         data.predictions = states[-1]
-    '''
 
     def backward(self,data):
         n = self.states[-1].shape[1]
@@ -97,8 +100,7 @@ class neural_network:
             gradient = base.to_matrix(gradient, self.weights[i].shape)
             remove_bias = np.ones(gradient.shape)
             remove_bias[:,0] = 0
-            #gradient + self.weights[i] * remove_bias * self.regularization
-            #need to check regularization implementation...
+            gradient = gradient + self.weights[i] * self.regularization
 
             self.gradients.append(gradient)
             self.lambdas.append(new_lambda)
@@ -140,7 +142,6 @@ class neural_network:
                 current_dSW.append(gradient)
 
             current_dSW.reverse()
-            print([s.shape for s in current_dSW])
             current_dSW = np.vstack(current_dSW)
             self.dSW.append(current_dSW)
         self.dSW = np.hstack(self.dSW)
@@ -265,9 +266,12 @@ class neural_network:
         Dv = Dv @ np.kron(self.augmented_states[i].T, np.eye(q)) @ vectors[i]
         return Dv
 
-    def update(self, step_size=0.05):
+    def update(self, step_size=0.05, decay=1):
         for i in range(len(self.weights)):
             self.weights[i] = self.weights[i] - step_size * self.gradients[i]
+
+
+
 
     def track_cost(self,df):
         predictions = self.states[-1]
@@ -278,25 +282,29 @@ class neural_network:
         cost = cost + reg
         self.costs.append(cost)
 
-    def train(self,df,max_iterations=5000, step_size=0.05):
+    def compute_cost(self,df,append=False):
+        predictions = df.predictions
+        cost = self.cost_function(df.y,predictions,df.s)
+        #reg = [np.linalg.norm(w)**2 for w in self.augmented_weights]
+        reg = [np.linalg.norm(w) ** 2 for w in self.weights]
+        reg = np.sum(reg) / 2 * self.regularization
+        cost = cost + reg
+        if append == True:
+            self.costs.append(cost)
+        else:
+            return(cost)
+
+    def train(self,df,max_iterations=5000, step_size=0.05, decay=1):
         for i in range(max_iterations):
             self.forward(df)
+            self.predict(df)
+            self.compute_cost(df,append=True)
             self.backward(df)
-            self.track_cost(df)
+            #self.update_backtracking(df,step_size)
             self.update(step_size)
-
-    def train_newton(self,df,max_iterations=5000, step_size=0.05):
-        for i in range(max_iterations):
-            self.forward(df)
-            self.backward(df)
-            self.compute_hessian()
-            self.track_cost(df)
-            self.update_newton(step_size)
-
-    def update_newton(self, step_size=0.05):
-        '''Incomplete'''
-        B = np.linalg.inv(self.hessian_matrix)
-        return B
+            step_size = step_size * decay
+            if i % 1000 == 0:
+                print(step_size)
 
     def compute_gradient(self):
         self.gradient_vector = [[1]]

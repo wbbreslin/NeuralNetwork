@@ -210,3 +210,23 @@ def columnwise_tensor_matrix_product(tensor,matrix):
     matrix = matrix.T
     matrix = matrix[:, :, np.newaxis]
     return tensor @ matrix
+
+def is_positive_definite(matrix):
+    if not isinstance(matrix, np.ndarray):
+        raise ValueError("Input must be a numpy array")
+    if matrix.shape[0] != matrix.shape[1]:
+        raise ValueError("Matrix must be square")
+    try:
+        np.linalg.cholesky(matrix)
+        return True
+    except np.linalg.LinAlgError:
+        return False
+
+def classification_accuracy(predictions, truth):
+    predictions = np.round(predictions)
+    delta = np.abs(predictions - truth)
+    delta = np.sum(delta, axis=0)
+    print(delta.shape)
+    correct = np.sum(delta==0)
+    incorrect = np.sum(delta > 0)
+    return(correct)
